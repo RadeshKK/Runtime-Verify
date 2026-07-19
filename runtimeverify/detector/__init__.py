@@ -1,0 +1,3 @@
+"""
+runtimeverify.detector package.
+"""
