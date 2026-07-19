@@ -105,7 +105,7 @@ verify inspect behavior_model.json
 
 ## 🧪 Deep Dive: The Math
 
-At the heart of `RuntimeVerify` is **Wald's Sequential Probability Ratio Test**. Instead of making a decision based on a single transition, we maintain a cumulative log-likelihood ratio $\Lambda_t$:
+At the heart of `RuntimeVerify` is **Wald's Sequential Probability Ratio Test (SPRT)**. While the standard SPRT is designed for i.i.d. samples, we employ the generalized version for Markov-dependent observations, where the likelihood ratio is computed based on transition probabilities $P(s_t \mid s_{t-1})$. Instead of making a decision based on a single transition, we maintain a cumulative log-likelihood ratio $\Lambda_t$:
 
 $$\Lambda_t = \Lambda_{t-1} + \ln \frac{P(s_t \mid s_{t-1}; H_1)}{P(s_t \mid s_{t-1}; H_0)}$$
 

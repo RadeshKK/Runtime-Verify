@@ -1,4 +1,5 @@
 import math
+import time
 from typing import Dict, List, Any, Literal
 from runtimeverify.state.base import StateInterface
 from runtimeverify.markov.model import MarkovModel
@@ -14,17 +15,19 @@ class SPRTEngine(BaseDetector):
     Implements the BaseDetector interface, enabling it to plug directly into the Runtime Pipeline.
     Consumes transition probabilities from MarkovModel and aggregates log-likelihood ratios.
     """
-    
-    def __init__(self, markov_model: MarkovModel, hypothesis: Hypothesis, name: str = "SPRTDetector"):
+
+    def __init__(self, markov_model: MarkovModel, hypothesis: Hypothesis, name: str = "SPRTDetector", session_ttl: float = 3600.0):
         self.model = markov_model
         self.hypothesis = hypothesis
         self.thresholds = WaldThresholds(hypothesis)
         self._name = name
+        self.session_ttl = session_ttl
 
         # Stateful accumulators per session ID
         self._session_llr: Dict[str, float] = {}
         self._session_counts: Dict[str, int] = {}
         self._session_prev_state: Dict[str, str] = {}
+        self._session_last_access: Dict[str, float] = {}
 
     def metadata(self) -> DetectorMetadata:
         return DetectorMetadata(
@@ -89,11 +92,23 @@ class SPRTEngine(BaseDetector):
             }
         )
 
+    def _cleanup_sessions(self) -> None:
+        """Removes sessions that have not been accessed within the TTL."""
+        now = time.time()
+        expired_sessions = [
+            sid for sid, last_access in self._session_last_access.items()
+            if now - last_access > self.session_ttl
+        ]
+        for sid in expired_sessions:
+            self.reset_session(sid)
+
     def observe_sprt(self, state: StateInterface) -> SPRTDecision:
         """
-        Calculates likelihood increment, accumulates log-likelihood ratio, 
+        Calculates likelihood increment, accumulates log-likelihood ratio,
         and evaluates Wald thresholds for the session.
         """
+        self._cleanup_sessions()
+
         session_id = state.context.session_id
         current_name = state.name
 
@@ -101,28 +116,25 @@ class SPRTEngine(BaseDetector):
         count = self._session_counts.get(session_id, 0)
         prev_name = self._session_prev_state.get(session_id, None)
 
+        self._session_last_access[session_id] = time.time()
+
         increment = 0.0
         evidence: Dict[str, Any] = {}
 
         if prev_name is not None:
             # 1. Fetch probabilities
             p_val = self.model.transition_probability(prev_name, current_name)
-            q_val = self.hypothesis.get_q_probability(prev_name, current_name)
+            q_val = self.hypothesis.get_q_probability(prev_name, state)
 
-            # 2. Numerical safety adjustments
-            # Floor normal probability P to avoid log(0) underflow
-            p_safe = max(p_val, 1e-15)
-            # Ceiling alternative probability Q (or handle zero Q)
-            q_safe = max(q_val, 1e-15)
+            # 2. Cumulative log-likelihood ratio increment
+            # We assume model smoothing guarantees p_val > 0 and q_val > 0
+            increment = math.log(q_val / p_val)
 
-            # 3. Cumulative log-likelihood ratio increment
-            increment = math.log(q_safe / p_safe)
-            
             # Prevent infinite jumps (log-infinity capping)
-            if increment > 100.0:
-                increment = 100.0
-            elif increment < -100.0:
-                increment = -100.0
+            if increment > self.hypothesis.llr_cap:
+                increment = self.hypothesis.llr_cap
+            elif increment < -self.hypothesis.llr_cap:
+                increment = -self.hypothesis.llr_cap
 
             llr += increment
             count += 1
@@ -170,12 +182,14 @@ class SPRTEngine(BaseDetector):
         self._session_llr.clear()
         self._session_counts.clear()
         self._session_prev_state.clear()
+        self._session_last_access.clear()
 
     def reset_session(self, session_id: str) -> None:
         """Resets tracking variables for a specific session."""
         self._session_llr.pop(session_id, None)
         self._session_counts.pop(session_id, None)
         self._session_prev_state.pop(session_id, None)
+        self._session_last_access.pop(session_id, None)
 
     def save(self, path: str) -> None:
         """Saves the underlying Markov model to path."""

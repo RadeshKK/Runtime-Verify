@@ -1,4 +1,5 @@
 from typing import List
+import random
 from runtimeverify.markov.trainer import MarkovTrainer
 from runtimeverify.markov.predictor import MarkovPredictor
 from runtimeverify.markov.persistence import MarkovPersistence
@@ -43,6 +44,18 @@ class MarkovModel:
     def transition_probability(self, previous: str, current: str) -> float:
         """Returns the transition probability P(current | previous)."""
         return self.predictor.transition_probability(previous, current)
+
+    def sample(self, previous: str) -> str:
+        """Samples a state from the distribution P(. | previous)."""
+        probs = self.trainer.matrix.probabilities.get(previous.upper(), {})
+        if not probs:
+            # If we have no transitions from this state, sample any known state uniformly
+            alphabet = list(self.trainer.matrix.states)
+            return random.choice(alphabet) if alphabet else "UNKNOWN_STATE"
+
+        options = list(probs.keys())
+        weights = list(probs.values())
+        return random.choices(options, weights=weights)[0]
 
     def sequence_probability(self, sequence: List[str]) -> float:
         """Returns joint sequence probability P(S)."""
