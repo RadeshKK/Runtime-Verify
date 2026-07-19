@@ -11,11 +11,26 @@ dependencies = [
     "rich>=15.0.0",
     "scipy>=1.18.0",
     "typer>=0.27.0",
+    "pyyaml>=6.0.1",
+    "requests>=2.31.0",
 ]
+[project.scripts]
+verify = "runtimeverify.cli:main"
 
 [dependency-groups]
 dev = [
     "mypy>=2.3.0",
     "pytest>=9.1.1",
     "ruff>=0.15.22",
+    "httpx>=0.28.0",
+    "pytest-cov>=7.1.0",
+    "coverage>=7.15.2",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+

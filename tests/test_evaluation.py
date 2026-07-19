@@ -1,73 +1,93 @@
 import pytest
+from runtimeverify.events import Event, FilesystemEvent, ToolEvent
+from runtimeverify.runtime.engine import RuntimeEngine
+from runtimeverify.markov.model import MarkovModel
+from runtimeverify.sprt import Hypothesis, SPRTEngine
 from runtimeverify.evaluation import (
-    BenchmarkRunner, 
-    ExperimentConfig, 
-    TraceGenerator
+    RandomDetector,
+    ThresholdDetector,
+    FrequencyDetector,
+    TraceGenerator,
+    EvaluationMetrics,
+    SessionReplayer,
+    BenchmarkRunner,
 )
-from runtimeverify.detector.interfaces import BaseDetector
-from runtimeverify.detector import DetectorResult, DetectorMetadata
 
-class MockEvaluatorDetector(BaseDetector):
-    """A detector that triggers anomaly after a certain number of steps."""
-    def __init__(self, trigger_at: int = 5):
-        self.trigger_at = trigger_at
-        self.count = 0
+def test_evaluation_generators():
+    normal_trace = TraceGenerator.generate_coding_session("session_1")
+    assert len(normal_trace) == 6
+    assert normal_trace[0].type == "agent_start"
+    assert normal_trace[-1].type == "agent_end"
 
-    @property
-    def metadata(self):
-        return DetectorMetadata(name="EvalMock", version="1.0")
+    rare = TraceGenerator.inject_rare_transition(normal_trace)
+    assert len(rare) == 2
+    assert rare[0].type == "agent_start"
+    assert rare[1].type == "agent_end"
 
-    def train(self, trace_sequences): pass
-    def reset(self): self.count = 0
+    escalated = TraceGenerator.inject_permission_escalation(normal_trace)
+    paths = [ev.path for ev in escalated if isinstance(ev, FilesystemEvent)]
+    assert "/etc/shadow" in paths
 
-    def update(self, current_state: str) -> DetectorResult:
-        self.count += 1
-        decision = "DRIFT" if self.count >= self.trigger_at else "NORMAL"
-        return DetectorResult(deviation_score=10.0 if decision == "DRIFT" else 0.0, 
-                             decision=decision, evidence={})
+    misuse = TraceGenerator.inject_tool_misuse(normal_trace)
+    tool_names = [ev.tool_name for ev in misuse if isinstance(ev, ToolEvent)]
+    assert "execute_command" in tool_names
 
-def test_evaluation_pipeline():
-    """Verify the full flow from generation to metric reporting."""
-    # 1. Generate trace
-    gen = TraceGenerator()
-    alphabet = ["S1", "S2", "S3"]
-    normal_trace = gen.generate_normal_trace(alphabet, 20, {"S1": ["S2"], "S2": ["S3"], "S3": ["S1"]})
+    loop = TraceGenerator.inject_infinite_loop(normal_trace)
+    assert len(loop) > 20
+
+def test_evaluation_metrics_calculator():
+    # Ground Truth: [Normal, Normal, Anomaly, Anomaly] -> [False, False, True, True]
+    # Predictions:  [Normal, Anomaly, Normal, Anomaly] -> [False, True, False, True]
+    # TP: (True, True) -> 1
+    # FP: (False, True) -> 1
+    # TN: (False, False) -> 1
+    # FN: (True, False) -> 1
+    gt = [False, False, True, True]
+    preds = [False, True, False, True]
     
-    # Inject anomaly at index 10
-    trace, gt = gen.inject_anomaly(normal_trace, 10, ["ANOMALY_S1", "ANOMALY_S2"])
+    metrics = EvaluationMetrics.calculate_classification_metrics(gt, preds)
     
-    # 2. Setup Benchmark
-    config = ExperimentConfig(
-        experiment_name="Test_Exp",
-        dataset_name="Synthetic_Drift",
-        detector_type="Mock",
-        expected_anomaly_index=10
+    assert metrics["true_positives"] == 1.0
+    assert metrics["false_positives"] == 1.0
+    assert metrics["true_negatives"] == 1.0
+    assert metrics["false_negatives"] == 1.0
+    assert metrics["accuracy"] == 0.5
+    assert metrics["precision"] == 0.5
+    assert metrics["recall"] == 0.5
+    assert metrics["f1_score"] == 0.5
+    assert metrics["false_positive_rate"] == 0.5
+    assert metrics["false_negative_rate"] == 0.5
+
+def test_baselines_observes():
+    # Random detector
+    rand = RandomDetector(anomaly_rate=0.0)
+    trace = TraceGenerator.generate_coding_session("session_1")
+    # Convert Event trace to state nodes (requires StateEncoder, or just test observe directly)
+    # Since baseline observe takes StateInterface:
+    from runtimeverify.state.execution import ExecutionState
+    from runtimeverify.state.context import StateContext
+    from runtimeverify.state.hierarchy import StateHierarchy
+    
+    mock_state = ExecutionState(
+        name="READ",
+        category="filesystem",
+        hierarchy=StateHierarchy(path=["FILESYSTEM", "READ"]),
+        context=StateContext(agent_id="agent_1", session_id="session_1")
     )
     
-    # Mock detector triggers at index 12 (delay of 2)
-    runner = BenchmarkRunner(lambda: MockEvaluatorDetector(trigger_at=12))
+    res = rand.observe(mock_state)
+    assert res.decision == "NORMAL"
     
-    # 3. Run
-    report = runner.evaluate_experiment(config, trace, gt, 10)
-    
-    # 4. Validate Metrics
-    assert report.metrics.avg_detection_delay == 2.0
-    assert report.metrics.recall > 0
-    assert report.config.experiment_name == "Test_Exp"
-
-def test_metrics_calculator_edge_cases():
-    """Test the MetricsCalculator with perfect and failed detections."""
-    from runtimeverify.evaluation.metrics import MetricsCalculator
-    
-    # Perfect detection
-    gt = [False, False, True, True]
-    pred = [False, False, True, True]
-    res = MetricsCalculator.calculate(gt, pred, [2], 2, 100.0, 10.0, 4)
-    assert res.f1_score == 1.0
-    assert res.fpr == 0.0
-    
-    # Total failure (all False)
-    pred_fail = [False, False, False, False]
-    res_fail = MetricsCalculator.calculate(gt, pred_fail, [], 2, 100.0, 10.0, 4)
-    assert res_fail.recall == 0.0
-    assert res_fail.precision == 0.0
+    # Threshold detector
+    thresh = ThresholdDetector(risk_threshold="critical")
+    # Critical state
+    from runtimeverify.state.metadata import StateMetadata
+    critical_state = ExecutionState(
+        name="ESCALATION",
+        category="filesystem",
+        hierarchy=StateHierarchy(path=["FILESYSTEM", "ESCALATION"]),
+        context=StateContext(agent_id="agent_1", session_id="session_1"),
+        metadata=StateMetadata(risk_level="critical")
+    )
+    res_crit = thresh.observe(critical_state)
+    assert res_crit.decision == "ANOMALY"

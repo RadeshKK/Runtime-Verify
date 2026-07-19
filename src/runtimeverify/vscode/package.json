@@ -1,0 +1,62 @@
+{
+  "name": "runtime-verify-vscode",
+  "displayName": "verify | AI Agent Runtime Verification",
+  "description": "Real-time safety and alignment monitoring for AI agents using statistical Sequential Probability Ratio Tests (SPRT).",
+  "version": "0.1.0",
+  "publisher": "google-deepmind",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Security",
+    "Visualization"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "verify-monitor",
+          "title": "verify",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "verify-monitor": [
+        {
+          "id": "verify-session-view",
+          "name": "Active Agent Sessions"
+        },
+        {
+          "id": "verify-alerts-view",
+          "name": "Security Alerts"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "verify.inspectSession",
+        "title": "verify: Inspect Agent Session"
+      },
+      {
+        "command": "verify.runDoctor",
+        "title": "verify: Run Health Diagnostic"
+      }
+    ],
+    "configuration": {
+      "title": "verify",
+      "properties": {
+        "verify.apiUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:8000",
+          "description": "REST API URL of the active verify verification server."
+        }
+      }
+    }
+  }
+}

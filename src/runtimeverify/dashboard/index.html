@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>verify | AI Runtime Verification Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen">
+    <!-- Navigation -->
+    <nav class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="h-8 w-8 rounded-lg bg-sky-500 flex items-center justify-center font-bold text-slate-950">V</div>
+                    <span class="text-xl font-bold tracking-tight text-slate-100">verify</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">Live Monitor</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-sm font-medium text-slate-400">System Status: <span class="text-emerald-400">Healthy</span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+                <span class="text-sm font-semibold text-slate-400">Events Processed</span>
+                <span class="text-3xl font-bold tracking-tight mt-2 text-sky-400" id="total-events">0</span>
+            </div>
+            <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+                <span class="text-sm font-semibold text-slate-400">Anomalies Blocked</span>
+                <span class="text-3xl font-bold tracking-tight mt-2 text-rose-500" id="anomalies-blocked">0</span>
+            </div>
+            <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+                <span class="text-sm font-semibold text-slate-400">Verification Alpha</span>
+                <span class="text-3xl font-bold tracking-tight mt-2 text-indigo-400">0.05</span>
+            </div>
+            <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+                <span class="text-sm font-semibold text-slate-400">Verification Beta</span>
+                <span class="text-3xl font-bold tracking-tight mt-2 text-emerald-400">0.05</span>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- SPRT Likelihood Timeline -->
+            <div class="lg:col-span-2 bg-slate-900/40 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
+                <h3 class="text-lg font-bold text-slate-100">SPRT Likelihood Accumulation</h3>
+                <div class="h-64">
+                    <canvas id="sprtChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Active Alerts -->
+            <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-100 mb-4">Active Policy Interventions</h3>
+                    <div id="alerts-list" class="space-y-3 overflow-y-auto max-h-56">
+                        <div class="text-sm text-slate-500 italic text-center py-8">No active security alerts.</div>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-800 flex justify-between text-xs text-slate-500">
+                    <span>Last Update: Just now</span>
+                    <button onclick="fetchMetrics()" class="hover:text-sky-400 transition-colors">Refresh</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transition Logs Table -->
+        <div class="bg-slate-900/40 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-800 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-100">Live Verification Event Log</h3>
+                <span class="px-2.5 py-1 text-xs font-semibold rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/20">WebSocket Listening</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-800">
+                    <thead class="bg-slate-900/80 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        <tr>
+                            <th class="px-6 py-4">Event ID</th>
+                            <th class="px-6 py-4">Session</th>
+                            <th class="px-6 py-4">Event Type</th>
+                            <th class="px-6 py-4">Result Action</th>
+                            <th class="px-6 py-4">LLR Score</th>
+                            <th class="px-6 py-4">Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="events-table-body" class="divide-y divide-slate-800 text-sm text-slate-300">
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-slate-500 italic">Waiting for incoming telemetry events...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Slide-out Detail Panel -->
+    <div id="detail-drawer" class="fixed inset-y-0 right-0 w-full sm:w-[520px] bg-slate-900 border-l border-slate-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <!-- Drawer Header -->
+        <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+            <div>
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <span id="drawer-status-dot" class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                    Event Verification Detail
+                </h3>
+                <p class="text-xs text-slate-500 font-mono mt-0.5" id="drawer-session-id">Session: #unknown</p>
+            </div>
+            <button onclick="closeDrawer()" class="text-slate-400 hover:text-slate-200 transition-colors p-1.5 hover:bg-slate-800/50 rounded-lg">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="border-b border-slate-800 bg-slate-950/20 px-6 flex space-x-4">
+            <button onclick="switchTab('overview')" id="tab-btn-overview" class="py-3 text-sm font-semibold border-b-2 border-sky-500 text-sky-400">Overview & Calculations</button>
+            <button onclick="switchTab('request')" id="tab-btn-request" class="py-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200">Request JSON</button>
+            <button onclick="switchTab('response')" id="tab-btn-response" class="py-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200">Response JSON</button>
+        </div>
+
+        <!-- Drawer Content -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+            <!-- Overview & Calculations Tab -->
+            <div id="tab-content-overview" class="space-y-6">
+                <!-- Status & Summary Card -->
+                <div class="bg-slate-950/40 border border-slate-800 p-4 rounded-xl space-y-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Verification Verdict</span>
+                    <div class="flex justify-between items-center">
+                        <span id="drawer-verdict-badge" class="px-2.5 py-1 rounded text-sm font-bold border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">ALLOW</span>
+                        <span id="drawer-confidence" class="text-sm font-medium text-slate-400">Confidence: 100%</span>
+                    </div>
+                    <p id="drawer-summary" class="text-sm text-slate-300 mt-2 font-medium">Observation accumulated. Current LLR: 0.0000.</p>
+                </div>
+
+                <!-- SPRT Mathematics & Transition Calculations -->
+                <div class="space-y-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">SPRT Transition Calculations</h4>
+                    <div class="bg-slate-950/40 border border-slate-800 p-4 rounded-xl space-y-4 font-mono text-xs">
+                        <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                            <span class="text-slate-500">State Transition</span>
+                            <span class="text-slate-300 font-bold" id="calc-states">READ → WRITE</span>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                            <span class="text-slate-500">Normal Prob (P)</span>
+                            <span class="text-slate-300" id="calc-p">0.8750</span>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                            <span class="text-slate-500">Anomaly Prob (Q)</span>
+                            <span class="text-slate-300" id="calc-q">0.1000</span>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                            <span class="text-slate-500">Formula Log increment</span>
+                            <span class="text-indigo-400 font-bold" id="calc-formula">ln(Q / P) = -2.1691</span>
+                        </div>
+                        <div class="flex justify-between py-1.5 border-b border-slate-800/50">
+                            <span class="text-slate-500">Cumulative LLR</span>
+                            <span class="text-sky-400 font-bold" id="calc-cumulative">-2.1691</span>
+                        </div>
+                        <div class="flex justify-between py-1.5">
+                            <span class="text-slate-500">Wald Boundaries</span>
+                            <span class="text-slate-300" id="calc-bounds">[-2.9444, 2.9444]</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Details Card -->
+                <div class="space-y-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Event Context</h4>
+                    <div class="bg-slate-950/40 border border-slate-800 p-4 rounded-xl space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Agent ID</span>
+                            <span class="text-slate-300 font-semibold" id="ctx-agent">my_agent</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Event Type</span>
+                            <span class="text-slate-300 font-mono text-xs" id="ctx-type">tool</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Action/Tool Name</span>
+                            <span class="text-sky-400 font-mono text-xs" id="ctx-action">read_source_code</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Timestamp</span>
+                            <span class="text-slate-400 font-mono text-xs" id="ctx-time">2026-07-19T20:25:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Request JSON Tab -->
+            <div id="tab-content-request" class="hidden h-full flex flex-col">
+                <pre class="flex-1 bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-auto text-xs text-sky-300 font-mono" id="json-request">{ ... }</pre>
+            </div>
+
+            <!-- Response JSON Tab -->
+            <div id="tab-content-response" class="hidden h-full flex flex-col">
+                <pre class="flex-1 bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-auto text-xs text-emerald-300 font-mono" id="json-response">{ ... }</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart JS Configuration
+        const ctx = document.getElementById('sprtChart').getContext('2d');
+        const sprtChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 15}, (_, i) => `Step ${i + 1}`),
+                datasets: [
+                    {
+                        label: 'LLR Value',
+                        data: [0, -0.8, -1.2, -2.1, -1.8, -0.9, -1.3, 0.2, 1.4, 2.3, 2.95, 3.4, 3.4, 3.4, 3.4],
+                        borderColor: '#0284c7',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Upper Wald Bound (B)',
+                        data: Array(15).fill(2.94),
+                        borderColor: '#f43f5e',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Lower Wald Bound (A)',
+                        data: Array(15).fill(-2.94),
+                        borderColor: '#10b981',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        grid: { color: '#334155' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: '#f8fafc' }
+                    }
+                }
+            }
+        });
+
+        let cachedDecisions = [];
+        let activeEvent = null;
+        let activeTab = 'overview';
+
+        function openDrawer(eventId) {
+            const decision = cachedDecisions.find(d => d.event?.id === eventId);
+            if (!decision) return;
+            activeEvent = decision;
+            
+            // Set header & session ID
+            document.getElementById('drawer-session-id').innerText = `Session: #${decision.session_id.substring(0, 8)} (${decision.session_id})`;
+            
+            // Set verdict badge & status dot
+            const verdictBadge = document.getElementById('drawer-verdict-badge');
+            const statusDot = document.getElementById('drawer-status-dot');
+            if (decision.status === 'BLOCK') {
+                verdictBadge.innerText = 'BLOCK';
+                verdictBadge.className = 'px-2.5 py-1 rounded text-sm font-bold border bg-rose-500/10 text-rose-400 border-rose-500/20';
+                statusDot.className = 'h-2.5 w-2.5 rounded-full bg-rose-500 animate-pulse';
+            } else {
+                verdictBadge.innerText = 'ALLOW';
+                verdictBadge.className = 'px-2.5 py-1 rounded text-sm font-bold border bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                statusDot.className = 'h-2.5 w-2.5 rounded-full bg-emerald-500';
+            }
+
+            // Set confidence
+            const sprtRes = decision.detector_results?.SPRTDetector || {};
+            const confPercent = sprtRes.confidence !== undefined ? (sprtRes.confidence * 100).toFixed(0) + '%' : 'N/A';
+            document.getElementById('drawer-confidence').innerText = `Confidence: ${confPercent}`;
+
+            // Set summary report
+            document.getElementById('drawer-summary').innerText = sprtRes.explanation?.summary || 'Policy check completed successfully.';
+
+            // Set calculations
+            const evidence = sprtRes.explanation?.evidence || {};
+            if (evidence.prev_state) {
+                document.getElementById('calc-states').innerText = `${evidence.prev_state} → ${evidence.curr_state}`;
+                
+                const pVal = typeof evidence.p_probability === 'number' ? evidence.p_probability.toFixed(6) : 'N/A';
+                const qVal = typeof evidence.q_probability === 'number' ? evidence.q_probability.toFixed(6) : 'N/A';
+                document.getElementById('calc-p').innerText = pVal;
+                document.getElementById('calc-q').innerText = qVal;
+                
+                const increment = evidence.increment || 0.0;
+                document.getElementById('calc-formula').innerText = `ln(Q / P) = ${increment >= 0 ? '+' : ''}${increment.toFixed(4)}`;
+            } else {
+                // First step fallback
+                const currState = evidence.curr_state || sprtRes.explanation?.evidence?.curr_state || 'START';
+                document.getElementById('calc-states').innerText = `START → ${currState}`;
+                document.getElementById('calc-p').innerText = '1.000000 (Initial)';
+                document.getElementById('calc-q').innerText = '1.000000 (Initial)';
+                document.getElementById('calc-formula').innerText = 'ln(1.0 / 1.0) = 0.0000';
+            }
+            
+            // Set cumulative score & bounds
+            const score = sprtRes.deviation_score !== undefined ? sprtRes.deviation_score.toFixed(4) : '0.0000';
+            document.getElementById('calc-cumulative').innerText = score;
+            
+            const lowerT = sprtRes.raw_metrics?.lower_threshold !== undefined ? sprtRes.raw_metrics.lower_threshold.toFixed(4) : '-2.9444';
+            const upperT = sprtRes.raw_metrics?.upper_threshold !== undefined ? sprtRes.raw_metrics.upper_threshold.toFixed(4) : '2.9444';
+            document.getElementById('calc-bounds').innerText = `[${lowerT}, ${upperT}]`;
+
+            // Set context fields
+            document.getElementById('ctx-agent').innerText = decision.agent_id;
+            document.getElementById('ctx-type').innerText = decision.event?.type || 'generic';
+            
+            // Find specific action resource
+            let actionName = decision.event?.tool_name || decision.event?.action || 'unknown';
+            if (decision.event?.resource) {
+                actionName = `${actionName} (${decision.event.resource})`;
+            }
+            document.getElementById('ctx-action').innerText = actionName;
+            document.getElementById('ctx-time').innerText = new Date(decision.timestamp).toLocaleString();
+
+            // Set raw JSON payloads
+            document.getElementById('json-request').innerText = JSON.stringify(decision.event || {}, null, 2);
+            
+            const cleanResponse = { ...decision };
+            delete cleanResponse.event; // Remove duplicate event payload from response viewer
+            document.getElementById('json-response').innerText = JSON.stringify(cleanResponse, null, 2);
+
+            // Open drawer container
+            const drawer = document.getElementById('detail-drawer');
+            drawer.classList.remove('translate-x-full');
+            
+            switchTab(activeTab);
+        }
+
+        function closeDrawer() {
+            const drawer = document.getElementById('detail-drawer');
+            drawer.classList.add('translate-x-full');
+            activeEvent = null;
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            const overviewContent = document.getElementById('tab-content-overview');
+            const requestContent = document.getElementById('tab-content-request');
+            const responseContent = document.getElementById('tab-content-response');
+
+            const overviewBtn = document.getElementById('tab-btn-overview');
+            const requestBtn = document.getElementById('tab-btn-request');
+            const responseBtn = document.getElementById('tab-btn-response');
+
+            // Hide all tab contents
+            overviewContent.classList.add('hidden');
+            requestContent.classList.add('hidden');
+            responseContent.classList.add('hidden');
+
+            // Reset tabs styling
+            overviewBtn.className = 'py-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200';
+            requestBtn.className = 'py-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200';
+            responseBtn.className = 'py-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200';
+
+            // Show selected tab content and style button
+            if (tab === 'overview') {
+                overviewContent.classList.remove('hidden');
+                overviewBtn.className = 'py-3 text-sm font-semibold border-b-2 border-sky-500 text-sky-400';
+            } else if (tab === 'request') {
+                requestContent.classList.remove('hidden');
+                requestBtn.className = 'py-3 text-sm font-semibold border-b-2 border-sky-500 text-sky-400';
+            } else if (tab === 'response') {
+                responseContent.classList.remove('hidden');
+                responseBtn.className = 'py-3 text-sm font-semibold border-b-2 border-sky-500 text-sky-400';
+            }
+        }
+
+        async function fetchMetrics() {
+            try {
+                const response = await fetch('/metrics');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('total-events').innerText = data.total_events_processed;
+                    document.getElementById('anomalies-blocked').innerText = data.anomalies_detected;
+                }
+
+                const decResponse = await fetch('/recent_decisions');
+                if (decResponse.ok) {
+                    const decisions = await decResponse.json();
+                    cachedDecisions = decisions; // Store globally for drawer access
+                    
+                    // Render events table
+                    const tbody = document.getElementById('events-table-body');
+                    if (decisions.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-500 italic">Waiting for incoming telemetry events...</td></tr>';
+                    } else {
+                        tbody.innerHTML = decisions.map(d => {
+                            const statusColor = d.status === 'BLOCK' ? 'text-rose-400 bg-rose-500/10 border-rose-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+                            const sprtRes = d.detector_results?.SPRTDetector || {};
+                            const score = sprtRes.deviation_score !== undefined ? sprtRes.deviation_score.toFixed(4) : 'N/A';
+                            const conf = sprtRes.confidence !== undefined ? (sprtRes.confidence * 100).toFixed(0) + '%' : 'N/A';
+                            const evType = sprtRes.explanation?.evidence?.curr_state || 'UNKNOWN';
+                            const eventId = d.event?.id || '';
+                            
+                            return `
+                                <tr onclick="openDrawer('${eventId}')" class="hover:bg-slate-900/30 transition-colors cursor-pointer">
+                                    <td class="px-6 py-4 font-mono text-xs text-sky-400">#${d.session_id.substring(0, 8)}</td>
+                                    <td class="px-6 py-4 font-medium text-slate-200">${d.agent_id}</td>
+                                    <td class="px-6 py-4 text-slate-400 font-mono text-xs">${evType}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-0.5 rounded text-xs font-semibold border ${statusColor}">${d.status}</span>
+                                    </td>
+                                    <td class="px-6 py-4 font-mono font-bold text-slate-300">${score}</td>
+                                    <td class="px-6 py-4 text-slate-400">${conf}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+
+                    // Render alerts panel
+                    const alertsList = document.getElementById('alerts-list');
+                    const blockedDecisions = decisions.filter(d => d.status === 'BLOCK');
+                    if (blockedDecisions.length === 0) {
+                        alertsList.innerHTML = '<div class="text-sm text-slate-500 italic text-center py-8">No active security alerts.</div>';
+                    } else {
+                        alertsList.innerHTML = blockedDecisions.map(d => {
+                            const sprtRes = d.detector_results?.SPRTDetector || {};
+                            const summary = sprtRes.explanation?.summary || 'Policy threshold violation.';
+                            const evidence = sprtRes.explanation?.evidence || {};
+                            const details = evidence.prev_state 
+                                ? `Transition: ${evidence.prev_state} → ${evidence.curr_state} (p_normal=${evidence.p_probability.toFixed(4)}, q_anomaly=${evidence.q_probability.toFixed(4)})`
+                                : '';
+                            return `
+                                <div class="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl space-y-1">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-bold uppercase text-rose-400">Intervention (Block)</span>
+                                        <span class="text-[10px] text-slate-500">Session: ${d.session_id.substring(0, 8)}</span>
+                                    </div>
+                                    <p class="text-sm text-slate-200 font-medium">${summary}</p>
+                                    ${details ? `<p class="text-xs text-rose-300 font-mono mt-2 bg-slate-950/40 p-2 rounded border border-rose-500/10">${details}</p>` : ''}
+                                </div>
+                            `;
+                        }).join('');
+                    }
+
+                    // Update LLR Chart with the last session LLR history
+                    if (decisions.length > 0) {
+                        const scoreHistory = decisions.map(d => {
+                            const sprtRes = d.detector_results?.SPRTDetector || {};
+                            return sprtRes.deviation_score || 0.0;
+                        }).reverse();
+                        
+                        sprtChart.data.labels = Array.from({length: scoreHistory.length}, (_, i) => `Step ${i + 1}`);
+                        sprtChart.data.datasets[0].data = scoreHistory;
+                        sprtChart.data.datasets[1].data = Array(scoreHistory.length).fill(2.94);
+                        sprtChart.data.datasets[2].data = Array(scoreHistory.length).fill(-2.94);
+                        sprtChart.update();
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch metrics", e);
+            }
+        }
+
+        // Poll API metrics every 3 seconds
+        setInterval(fetchMetrics, 3000);
+        fetchMetrics();
+    </script>
+</body>
+</html>

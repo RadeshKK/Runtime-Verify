@@ -1,3 +1,0 @@
-"""
-runtimeverify.cli package.
-"""

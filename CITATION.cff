@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as below."
+authors:
+  - family-names: "DeepMind Agentic Coding Team"
+    given-names: "Google"
+title: "AI Agent Runtime Verification Framework (runtimeverify)"
+version: 0.1.0
+date-released: 2026-07-19
+url: "https://github.com/google-deepmind/runtime-verify"
+repository-code: "https://github.com/google-deepmind/runtime-verify"
+license: MIT
+keywords:
+  - "ai agents"
+  - "runtime verification"
+  - "sequential probability ratio test"
+  - "markov chains"
+  - "safety guardrails"

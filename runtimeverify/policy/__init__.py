@@ -1,3 +1,0 @@
-"""
-runtimeverify.policy package.
-"""

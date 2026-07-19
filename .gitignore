@@ -6,3 +6,10 @@ __pycache__/
 .ruff_cache/
 .vscode/
 .idea/
+.aider*
+.coverage
+.runtimeverify/
+scratch/
+model.json
+training_traces.json
+*.egg-info/
