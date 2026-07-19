@@ -11,7 +11,7 @@ class MarkovModel:
     Wraps separate components for training, inference, persistence, and explainability.
     """
     
-    def __init__(self, smoothing: float = 0.0, model_version: str = "1.0"):
+    def __init__(self, smoothing: float = 1e-6, model_version: str = "1.0"):
         self.trainer = MarkovTrainer(smoothing=smoothing)
         self.predictor = MarkovPredictor(self.trainer.matrix)
         self.model_version = model_version

@@ -147,15 +147,15 @@ def test_alternative_models():
     assert uniform.get_probability("ANY", "THING") == 0.125
     
     # Adversarial
-    adversarial = AdversarialAlternativeModel(vocabulary_size=8, high_risk_states={"EXECUTE_COMMAND"}, high_risk_prob=0.8)
-    assert adversarial.get_probability("ANY", "EXECUTE_COMMAND") == 0.8
-    assert adversarial.get_probability("ANY", "OTHER") == pytest.approx(0.2 / 7)
+    adversarial = AdversarialAlternativeModel(vocabulary_size=8, high_risk_identifiers={"EXECUTE_COMMAND"}, high_risk_prob=0.8)
+    assert adversarial.get_probability("ANY", ExecutionState(name="EXECUTE_COMMAND", category=StateCategory.TOOL, hierarchy=StateHierarchy(path=["TOOL", "EXECUTE_COMMAND"]), context=StateContext(session_id="s1", agent_id="a1"))) == 0.8
+    assert adversarial.get_probability("ANY", ExecutionState(name="OTHER", category=StateCategory.TOOL, hierarchy=StateHierarchy(path=["TOOL", "OTHER"]), context=StateContext(session_id="s1", agent_id="a1"))) == pytest.approx(0.2 / 7)
     
     # Empirical
     empirical = EmpiricalAlternativeModel(transition_matrix={"STATE": {"NEXT": 0.5}}, vocabulary_size=8)
-    assert empirical.get_probability("STATE", "NEXT") == 0.5
-    assert empirical.get_probability("STATE", "OTHER") == 0.125
-    assert empirical.get_probability("UNSEEN", "ANY") == 0.125
+    assert empirical.get_probability("STATE", ExecutionState(name="NEXT", category=StateCategory.TOOL, hierarchy=StateHierarchy(path=["TOOL", "NEXT"]), context=StateContext(session_id="s1", agent_id="a1"))) == 0.5
+    assert empirical.get_probability("STATE", ExecutionState(name="OTHER", category=StateCategory.TOOL, hierarchy=StateHierarchy(path=["TOOL", "OTHER"]), context=StateContext(session_id="s1", agent_id="a1"))) == 0.125
+    assert empirical.get_probability("UNSEEN", ExecutionState(name="ANY", category=StateCategory.TOOL, hierarchy=StateHierarchy(path=["TOOL", "ANY"]), context=StateContext(session_id="s1", agent_id="a1"))) == 0.125
 
 
 # 4. Test Evaluation & Baselines
