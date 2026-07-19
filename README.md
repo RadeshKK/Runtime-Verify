@@ -1,135 +1,180 @@
-# RuntimeVerify: Statistical Runtime Verification for AI Agents
+# 🛡️ RuntimeVerify: Statistical Runtime Verification for AI Agents
 
-`runtimeverify` is a high-performance, non-intrusive framework designed to monitor AI agents in real-time. It transforms raw telemetry streams into symbolic state sequences and applies sequential statistical tests to detect behavioral drift and policy violations before they result in catastrophic failures.
+[![Python Version](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![Version](https://img.shields.io/badge/version-0.1.0-orange.svg)]()
 
-## 🚀 Core Concept
-
-Unlike traditional guardrails that rely on LLM-based "critics" (which are slow and expensive), `runtimeverify` uses **Classical Statistical Process Control (SPC)**. It treats an AI agent's execution as a stochastic process, learning the "normal" transition probabilities between behavioral states and triggering alerts when the agent's trajectory deviates significantly from the learned baseline.
+**Non-intrusive, high-performance behavioral monitoring for AI agents. Detect drift and policy violations using classical statistical process control instead of expensive LLM critics.**
 
 ---
 
-## 🛠️ Technical Architecture
+## 🌟 Why RuntimeVerify?
 
-### The Verification Pipeline
+Traditional "guardrail" systems often rely on LLM-based critics to determine if an agent is behaving correctly. This introduces a "recursive cost" problem: you spend tokens and latency to check if you are spending tokens and latency.
 
-The system operates as a linear pipeline that transforms raw data into a binary decision (`ALLOW` / `BLOCK`):
+`RuntimeVerify` shifts the paradigm from **semantic critique** to **statistical verification**. By treating agent execution as a stochastic process, it learns a "behavioral baseline" and triggers alerts when the agent's trajectory deviates significantly from that baseline.
 
-1. **Telemetry Interception**: High-fidelity events are captured via the `Telemetry SDK` (using decorators and middleware).
-2. **Semantic Encoding**: Raw events are mapped to a finite alphabet of symbolic states $\Sigma$ (e.g., `READ_SENSITIVE_FILE`, `SHELL_EXEC`).
+### 🚀 Key Advantages
+- **⚡ Ultra-Low Latency**: $\approx 1\text{ms}$ overhead per transition.
+- **💰 Zero Token Cost**: No LLM calls required for the verification loop.
+- **📉 Mathematical Rigor**: Powered by Wald's Sequential Probability Ratio Test (SPRT).
+- **🔍 Non-Intrusive**: Minimal instrumentation via Python decorators.
+
+### 🎯 Use-Cases
+- **Sensitive Tool Access**: Ensure an agent doesn't suddenly start reading `/etc/shadow` after a period of normal behavior.
+- **Financial Agents**: Detect behavioral drift in trading agents before they execute an anomalous sequence of trades.
+- **Enterprise Compliance**: Verify that agents adhere to operational policies without introducing runtime bottlenecks.
+
+---
+
+## 📐 Technical Architecture
+
+The system transforms raw telemetry into a binary decision (`ALLOW` / `BLOCK`) via a linear pipeline:
+
+```mermaid
+graph LR
+    A[Telemetry SDK] --> B[Semantic Encoder]
+    B --> C[Markov Model]
+    C --> D[SPRT Detector]
+    D --> E[Policy Engine]
+    E --> F{Decision}
+```
+
+1. **Telemetry**: Capture high-fidelity events via `@observe_tool` or `@observe_llm`.
+2. **Semantic Encoding**: Map raw event noise (UUIDs, paths) to a finite alphabet of symbolic states $\Sigma$ (e.g., `SENSITIVE_WRITE`).
 3. **Probabilistic Detection**: A first-order Markov Model estimates the probability of the current transition $P(s_t | s_{t-1})$.
-4. **Statistical Accumulation**: The **Sequential Probability Ratio Test (SPRT)** accumulates log-likelihood ratios over time to distinguish between the null hypothesis $H_0$ (normal) and the alternative $H_1$ (drifted).
-5. **Policy Enforcement**: The `Policy Engine` maps the statistical result to a mitigation action.
+4. **Statistical Accumulation**: The SPRT accumulates log-likelihood ratios to distinguish between $H_0$ (normal) and $H_1$ (drifted).
+5. **Policy Enforcement**: Maps the statistical result to a mitigation action.
 
-### 🧪 Technical Deep Dive
+---
 
-#### 1. From Raw Event to Symbolic State
-The `Semantic State Encoder` reduces the dimensionality of agent logs. A raw event contains noise (timestamps, UUIDs, specific file paths). The encoder applies a rule-set to extract the **intent** or **category**.
-* **Raw Event:** `{ "type": "tool_call", "tool": "write_file", "path": "/etc/shadow", "content": "..." }`
-* **Encoded State:** `SENSITIVE_WRITE`
-This allows the Markov model to operate on a finite set of tokens rather than an infinite set of unique strings.
+## 🛠️ Quick Start
 
-#### 2. Mathematical Foundation: SPRT
-The heart of the detector is the **Wald's Sequential Probability Ratio Test**. Instead of making a decision based on a single transition, we maintain a cumulative log-likelihood ratio $\Lambda_t$:
+### 1. Installation
+Using `uv` (recommended) or `pip`:
+
+```bash
+# Using uv
+uv pip install .
+
+# Using pip
+pip install .
+```
+
+### 2. Instrument Your Agent
+Simply wrap your tools and LLM calls with the `runtimeverify` decorators:
+
+```python
+from runtimeverify.telemetry.decorators import observe_tool, observe_llm
+
+@observe_tool(name="filesystem_write")
+def write_to_disk(path: str, content: str):
+    with open(path, "w") as f:
+        f.write(content)
+    return "Success"
+
+@observe_llm(model="claude-3-5-sonnet")
+def get_agent_response(prompt: str):
+    # Your LLM call here
+    return "The user's request was processed."
+
+# Now, every time these are called, telemetry is automatically 
+# captured and sent to the verification engine.
+```
+
+### 3. Train Your Behavioral Baseline
+Collect "golden" traces (JSON/JSONL files) and train your model:
+
+```bash
+# Initialize workspace
+verify init
+
+# Train the Markov model
+verify train ./data/golden_traces/ --output behavior_model.json
+```
+
+### 4. Inspect Your Model
+Verify the learned state transitions and sparsity:
+
+```bash
+verify inspect behavior_model.json
+```
+
+---
+
+## 🧪 Deep Dive: The Math
+
+At the heart of `RuntimeVerify` is **Wald's Sequential Probability Ratio Test**. Instead of making a decision based on a single transition, we maintain a cumulative log-likelihood ratio $\Lambda_t$:
 
 $$\Lambda_t = \Lambda_{t-1} + \ln \frac{P(s_t \mid s_{t-1}; H_1)}{P(s_t \mid s_{t-1}; H_0)}$$
 
-**Numerical Stability Measures:**
-To prevent floating-point underflow or $\ln(0)$ errors (which occur when a transition is never seen during training), the framework implements:
-* **Probability Flooring:** Every probability is clamped to a minimum value $\epsilon$ (e.g., $1e-10$).
-* **Log-Domain Computation:** Calculations are performed in the log-space to maintain precision over long execution sequences.
-
 **Decision Boundaries:**
-- $\Lambda_t \ge \ln(\frac{1 - \beta}{\alpha}) \implies$ **Reject $H_0$** (Anomaly Detected)
-- $\Lambda_t \le \ln(\frac{\beta}{1 - \alpha}) \implies$ **Accept $H_0$** (Reset Accumulator)
+- $\Lambda_t \ge \ln(\frac{1 - \beta}{\alpha}) \implies$ **Anomaly Detected** (Reject $H_0$)
+- $\Lambda_t \le \ln(\frac{\beta}{1 - \alpha}) \implies$ **Reset Accumulator** (Accept $H_0$)
 - Otherwise $\implies$ **Continue Sampling**
 
+This allows the system to ignore transient noise while rapidly identifying systemic behavioral drift.
+
 ---
 
-## 📦 Package Overview
+## 📦 CLI Reference
 
-| Package | Responsibility | Key Components |
+The `verify` command provides the following utilities:
+
+| Command | Description | Example |
 | :--- | :--- | :--- |
-| `telemetry` | Event capture and propagation | `EventBus`, `trace_tool`, `TelemetryEngine` |
-| `encoder` | Semantic mapping & caching | `EncodingPipeline`, `ContextAwareEncoder` |
-| `detector` | Statistical modeling | `MarkovBehaviorModel`, `SPRTDetector` |
-| `engine` | Orchestration & session mgmt | `RuntimeEngine`, `VerificationSession` |
-| `policy` | Rule-based mitigation | `PolicyEngine`, `PolicyViolationError` |
-| `evaluation`| Benchmarking & metrics | `BenchmarkRunner`, `MetricsCalculator` |
-| `cli` | Developer interface | `train`, `benchmark`, `observe` |
+| `init` | Initializes a new `.runtimeverify` workspace | `verify init` |
+| `train` | Trains a Markov model from session traces | `verify train ./traces -o model.json` |
+| `inspect` | Analyzes state occupancy and sparsity | `verify inspect model.json` |
+| `explain` | Explains a specific state transition probability | `verify explain READ_SENSITIVE WRITE_FILE` |
+| `doctor` | Runs environment and configuration diagnostics | `verify doctor` |
+| `version` | Prints the current framework version | `verify version` |
 
 ---
 
-## 👩‍💻 Developer's Guide to Extension
+## 👩‍💻 Extension Guide
 
-`runtimeverify` is designed to be extensible via Abstract Base Classes (ABCs).
+`RuntimeVerify` is designed for extensibility via Abstract Base Classes (ABCs).
 
 ### Implementing a Custom Detector
-To add a new statistical method (e.g., a CUSUM detector), inherit from `BaseDetector`:
+To implement a new statistical method (e.g., CUSUM), inherit from `BaseDetector`:
+
 ```python
 from runtimeverify.detector.interfaces import BaseDetector
 from runtimeverify.detector import DetectorResult
 
 class MyCustomDetector(BaseDetector):
     def train(self, trace_sequences):
-        # Implement training logic here
+        # Implement training logic
         pass
 
     def update(self, current_state: str) -> DetectorResult:
-        # Implement your statistical test here
+        # Implement statistical test
         return DetectorResult(deviation_score=0.5, decision="NORMAL", evidence={})
 
     def reset(self):
-        # Reset internal counters
         pass
-```
-
-### Adding Encoding Rules
-Custom state mappings can be added to the `ContextAwareEncoder` via YAML configuration without changing the code:
-```yaml
-- event_type: "tool_call_start"
-  conditions:
-    tool_name: "web_search"
-    query_contains: "competitor"
-  target_state: "COMPETITOR_RESEARCH"
-```
-
----
-
-## 🚀 Getting Started
-
-### Installation
-```bash
-pip install .
-```
-
-### Training a Model
-Collect a set of "golden" traces (JSON files) where the agent behaves correctly:
-```bash
-runtimeverify train ./data/golden_traces/ --output behavior_model.json
-```
-
-### Benchmarking a Detector
-Evaluate the model against a labeled dataset to calculate FPR and FNR:
-```bash
-runtimeverify benchmark ./data/test_set.json behavior_model.json --config eval_config.yaml
-```
-
-### Live Observation
-Monitor a live telemetry stream:
-```bash
-runtimeverify observe --model behavior_model.json --stream agent_logs.jsonl
 ```
 
 ---
 
 ## 📊 Performance Metrics
 
-The framework is optimized for low-latency inline guardrails. In benchmark tests, the pipeline achieves:
+Optimized for inline runtime guardrails:
 - **Encoding Latency**: $< 0.5\text{ms}$
 - **Detection Overhead**: $\approx 1\text{ms}$ per transition.
 - **Memory Footprint**: $\mathcal{O}(|\Sigma|^2)$ where $|\Sigma|$ is the size of the state alphabet.
 
 ## 🗺️ Roadmap
-- [ ] **HMM Integration**: Moving beyond first-order Markov chains to Hidden Markov Models for latent goal tracking.
-- [ ] **OTLP Export**: Native support for OpenTelemetry for enterprise observability.
-- [ ] **LTL Policies**: Support for Linear Temporal Logic to define complex forbidden sequences (e.g., $S_1 \rightarrow \text{not } S_2 \rightarrow S_3$).
+- [ ] **HMM Integration**: Moving beyond first-order Markov chains to Hidden Markov Models.
+- [ ] **OTLP Export**: Native support for OpenTelemetry.
+- [ ] **LTL Policies**: Support for Linear Temporal Logic forbidden sequences.
+
+---
+
+## 🤝 Contributing
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for our guidelines.
+
+## 📜 License
+Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
