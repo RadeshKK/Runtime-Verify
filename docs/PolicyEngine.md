@@ -1,34 +1,9 @@
-# Policy Engine & Enforcement
+# Policy Engine
 
-The `policy` module determines actions to take based on the output of the Detector Engine. It acts as the brain for mitigation and enforcement.
+This document describes the logic and configuration of the Policy Engine.
 
-## Policy Schema
+## Policy Definition
+Policies are defined as sets of invariants and temporal properties that the system must satisfy.
 
-Policies are declared in YAML. A policy defines triggers (detector outputs) and actions (mitigation strategies).
-
-```yaml
-version: "1.0"
-policy_name: "restrict-filesystem-access"
-rules:
-  - id: "unauthorized-write-attempt"
-    detector_property_id: "forbidden-write-path"
-    condition: "severity == 'CRITICAL'"
-    actions:
-      - type: "log"
-        level: "warning"
-      - type: "kill_process"
-        target: "actor.pid"
-      - type: "send_alert"
-        destination: "webhook-slack"
-```
-
-## Mitigation Action Registry
-
-Developers can register custom action handlers to execute specialized responses:
-
-```python
-@register_action("kill_process")
-def handle_kill(actor_pid: int):
-    # Kill implementation
-    os.kill(actor_pid, signal.SIGKILL)
-```
+## Evaluation Logic
+The engine compares the encoded state provided by the Encoder against the active policy set.

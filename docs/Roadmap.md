@@ -1,21 +1,11 @@
-# Runtime Verify Project Roadmap
+# Roadmap
 
-This roadmap outlines the milestones and release plan for the `runtimeverify` framework.
+This document outlines the future development goals for `runtimeverify`.
 
-## Phase 1: Core Framework (Current)
-- [x] Basic directory structure and package organization
-- [ ] Base classes for `Telemetry`, `Encoder`, `Detector`, and `Policy` modules
-- [ ] Command Line Interface (CLI) harness
-- [ ] Standard logging integration
+## Short-term Goals
+- [ ] Complete the core API implementation.
+- [ ] Add support for more complex temporal logic.
 
-## Phase 2: Feature Extensions
-- [ ] eBPF telemetry collector for Linux environments
-- [ ] Finite State Machine (FSM) detector implementation
-- [ ] YAML policy parsing and registry
-- [ ] AST-based python tracer
-
-## Phase 3: Advanced Detectors & Integrations
-- [ ] Linear Temporal Logic (LTL) evaluation engine
-- [ ] Slack and Webhook integration for alerts
-- [ ] Real-time visualization dashboard
-- [ ] Performance benchmarks and optimizations
+## Long-term Goals
+- [ ] Implement automated policy generation from specifications.
+- [ ] Optimise state encoding for high-throughput systems.
