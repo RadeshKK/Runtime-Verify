@@ -4,12 +4,13 @@ from runtimeverify.state.execution import ExecutionState
 from runtimeverify.detector.base import BaseDetector
 from runtimeverify.detector.results import DetectorResult, DetectorExplanation
 
+
 class Dispatcher:
     """
     State dispatcher coordinating concurrent statistical detector checks.
     Isolates faults so that individual detector failures do not halt runtime execution.
     """
-    
+
     def __init__(self, detectors: Optional[List[BaseDetector]] = None):
         self._detectors: List[BaseDetector] = detectors or []
         self._logger = logging.getLogger("runtimeverify.runtime.dispatcher")
@@ -24,11 +25,11 @@ class Dispatcher:
         Catches exceptions to isolate failures and yields default/degraded results.
         """
         results: Dict[str, DetectorResult] = {}
-        
+
         for detector in self._detectors:
             metadata = detector.metadata()
             name = metadata.name
-            
+
             # Skip if detector doesn't support this category
             if metadata.supported_categories and state.category.value not in metadata.supported_categories:
                 continue
@@ -38,8 +39,7 @@ class Dispatcher:
                 results[name] = detector.observe(state)
             except Exception as e:
                 self._logger.error(
-                    f"Fault isolated: detector '{name}' threw an exception during observe(): {e}", 
-                    exc_info=True
+                    f"Fault isolated: detector '{name}' threw an exception during observe(): {e}", exc_info=True
                 )
                 # Graceful degradation fallback payload
                 fallback_explanation = DetectorExplanation(
@@ -52,9 +52,9 @@ class Dispatcher:
                     confidence=0.0,
                     decision="PENDING",
                     explanation=fallback_explanation,
-                    raw_metrics={"failed": True, "error": str(e)}
+                    raw_metrics={"failed": True, "error": str(e)},
                 )
-                
+
         return results
 
     def reset_detectors(self) -> None:

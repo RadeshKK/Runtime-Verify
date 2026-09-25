@@ -10,6 +10,7 @@ from runtimeverify.events import (
 from runtimeverify.telemetry.emitter import TelemetryEmitter
 from runtimeverify.telemetry.context import get_current_context
 
+
 class TelemetryCollector(ABC):
     """Abstract interface defining the collector for normalizing telemetry measurements into Events."""
 
@@ -79,7 +80,7 @@ class TelemetryCollector(ABC):
 
 class DefaultTelemetryCollector(TelemetryCollector):
     """
-    Default collector implementation. Reads the active TelemetryContext 
+    Default collector implementation. Reads the active TelemetryContext
     to automatically populate session and agent parameters, then fires events via the emitter.
     """
 

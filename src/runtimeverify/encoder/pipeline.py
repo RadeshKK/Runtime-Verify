@@ -16,13 +16,14 @@ from runtimeverify.encoder.base import (
 )
 from runtimeverify.encoder.cache import StateEncoderCache
 
+
 class StateEncoderPipeline(BaseEncoder):
     """
     State Encoder Pipeline implementing the BaseEncoder interface.
-    Coordinates Normalization, Cache checks, Resource Classification, 
+    Coordinates Normalization, Cache checks, Resource Classification,
     Context Enrichment, and Rule Evaluation stages to produce ExecutionState nodes.
     """
-    
+
     def __init__(
         self,
         normalizer: TelemetryNormalizer,
@@ -36,7 +37,7 @@ class StateEncoderPipeline(BaseEncoder):
         self.enricher = enricher
         self.rule_engine = rule_engine
         self.cache = cache or StateEncoderCache()
-        
+
         # In-memory history trackers per session
         self._name_history: Dict[str, List[str]] = {}
         self._state_history: Dict[str, List[ExecutionState]] = {}
@@ -44,11 +45,11 @@ class StateEncoderPipeline(BaseEncoder):
     def encode(self, event: Event) -> ExecutionState:
         # 1. Normalize
         normalized = self.normalizer.normalize(event)
-        
+
         # 2. Check cache for resource properties (type, action, status)
         resource_key = f"{normalized.get('type')}:{normalized.get('resource')}:{normalized.get('action')}"
         cached_classification = self.cache.get(resource_key)
-        
+
         if cached_classification is not None:
             classified = cached_classification.copy()
             # Copy runtime trace fields
@@ -77,7 +78,7 @@ class StateEncoderPipeline(BaseEncoder):
 
         # 4. Evaluate rules
         state_name = self.rule_engine.evaluate(enriched)
-        
+
         # Update history names
         session_names.append(state_name)
         self._name_history[session_id] = session_names
@@ -85,7 +86,7 @@ class StateEncoderPipeline(BaseEncoder):
         # 5. Build ExecutionState
         hierarchy_path = [enriched.get("type", "generic").upper()] + state_name.split("_")
         hierarchy = StateHierarchy(path=hierarchy_path)
-        
+
         type_str = enriched.get("type", "generic").lower()
         try:
             category = StateCategory(type_str)
@@ -95,7 +96,7 @@ class StateEncoderPipeline(BaseEncoder):
         # Find preceding state ID
         previous_states = self._state_history.get(session_id, [])
         prev_id = previous_states[-1].id if previous_states else None
-        
+
         context = StateContext(
             resource_id=str(enriched.get("resource")) if enriched.get("resource") else None,
             resource_type=enriched.get("resource_type"),
@@ -104,12 +105,13 @@ class StateEncoderPipeline(BaseEncoder):
             previous_state_id=prev_id,
             timestamp=event.timestamp,
         )
-        
+
         # Resolve provenance
         from runtimeverify.encoder.rules import DefaultRuleEngine
+
         generated_by = "Fallback:ActionResource"
         confidence = 1.0
-        
+
         if isinstance(self.rule_engine, DefaultRuleEngine):
             for rule in self.rule_engine.rules:
                 if rule.matches(enriched):
@@ -117,7 +119,7 @@ class StateEncoderPipeline(BaseEncoder):
                     break
         else:
             generated_by = f"RuleEngine:{self.rule_engine.__class__.__name__}"
-            
+
         evidence = None
         if hasattr(event, "path"):
             evidence = getattr(event, "path")
@@ -127,16 +129,11 @@ class StateEncoderPipeline(BaseEncoder):
             evidence = getattr(event, "tool_name")
         elif hasattr(event, "key"):
             evidence = getattr(event, "key")
-            
-        prov = StateProvenance(
-            generated_by=generated_by,
-            confidence=confidence,
-            evidence=evidence
-        )
+
+        prov = StateProvenance(generated_by=generated_by, confidence=confidence, evidence=evidence)
 
         metadata = StateMetadata(
-            permission_level=enriched.get("permission_level"),
-            risk_level=enriched.get("risk_level", "low")
+            permission_level=enriched.get("permission_level"), risk_level=enriched.get("risk_level", "low")
         )
 
         state = ExecutionState(
@@ -150,11 +147,11 @@ class StateEncoderPipeline(BaseEncoder):
             encoder_version="1.0",
             provenance=prov,
         )
-        
+
         # Save state reference
         previous_states.append(state)
         self._state_history[session_id] = previous_states
-        
+
         return state
 
     def clear_session(self, session_id: str) -> None:

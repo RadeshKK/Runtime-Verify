@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Set, List, Union
+from typing import Dict, List, Union
 from runtimeverify.state.base import StateInterface
 from runtimeverify.state.categories import StateCategory
 from runtimeverify.state.hierarchy import StateHierarchy
+
 
 class AlternativeModel(ABC):
     """
@@ -23,6 +24,7 @@ class AlternativeModel(ABC):
 
 class UniformAlternativeModel(AlternativeModel):
     """Q is modeled as a uniform distribution over the state alphabet vocabulary."""
+
     def __init__(self, vocabulary_size: int):
         self.vocabulary_size = vocabulary_size
 
@@ -39,7 +41,13 @@ class AdversarialAlternativeModel(AlternativeModel):
     Q is modeled to prioritize high-risk states (e.g. command execution, data deletion).
     Simulates an attacker attempting to exploit the agent.
     """
-    def __init__(self, vocabulary_size: int, high_risk_identifiers: List[Union[str, StateHierarchy, StateCategory]], high_risk_prob: float = 0.5):
+
+    def __init__(
+        self,
+        vocabulary_size: int,
+        high_risk_identifiers: List[Union[str, StateHierarchy, StateCategory]],
+        high_risk_prob: float = 0.5,
+    ):
         self.vocabulary_size = vocabulary_size
         self.high_risk_identifiers = high_risk_identifiers
         self.high_risk_prob = high_risk_prob
@@ -72,6 +80,7 @@ class AdversarialAlternativeModel(AlternativeModel):
 
 class EmpiricalAlternativeModel(AlternativeModel):
     """Q is modeled using an explicit custom transition matrix or previously observed matrix counts."""
+
     def __init__(self, transition_matrix: Dict[str, Dict[str, float]], vocabulary_size: int):
         self.matrix = {k.upper(): {tk.upper(): tv for tk, tv in v.items()} for k, v in transition_matrix.items()}
         self.vocabulary_size = vocabulary_size
@@ -89,5 +98,6 @@ class EmpiricalAlternativeModel(AlternativeModel):
             options = list(self.matrix[prev].keys())
             weights = list(self.matrix[prev].values())
             import random
+
             return random.choices(options, weights=weights)[0]
         return "UNKNOWN_SAMPLED_STATE"

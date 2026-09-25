@@ -2,10 +2,12 @@ from typing import Optional, Dict
 from pydantic import Field
 from runtimeverify.events.base import Event
 
+
 class NetworkEvent(Event):
     """
     Event representing a network call or connection attempt by the agent, such as an HTTP request or database socket call.
     """
+
     type: str = Field("network", description="Event type discriminator")
     action: str = Field(..., description="The network action (e.g., request, response, connect, listen)")
     url: str = Field(..., description="The target URL or network endpoint address")

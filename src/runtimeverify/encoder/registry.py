@@ -1,12 +1,13 @@
 from typing import Dict, List
 from runtimeverify.encoder.base import BaseEncoder
 
+
 class EncoderRegistry:
     """
     Registry for managing multiple state encoder configurations.
     Allows dynamic registration and loading of modular encoders (e.g. RuleBased, MLBased).
     """
-    
+
     def __init__(self):
         self._encoders: Dict[str, BaseEncoder] = {}
 

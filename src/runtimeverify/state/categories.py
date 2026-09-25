@@ -1,10 +1,12 @@
 from enum import Enum
 
+
 class StateCategory(str, Enum):
     """
     Enum representing high-level operational categories for semantic states.
     Helps group states for downstream policy logic and metric aggregation.
     """
+
     FILESYSTEM = "filesystem"
     LLM = "llm"
     TOOL = "tool"

@@ -5,12 +5,13 @@ from runtimeverify.markov.predictor import MarkovPredictor
 from runtimeverify.markov.persistence import MarkovPersistence
 from runtimeverify.markov.explain import MarkovExplainer, TransitionExplanation
 
+
 class MarkovModel:
     """
     Core master coordinator representing the first-order Markov Behavior Model.
     Wraps separate components for training, inference, persistence, and explainability.
     """
-    
+
     def __init__(self, smoothing: float = 1e-6, model_version: str = "1.0"):
         self.trainer = MarkovTrainer(smoothing=smoothing)
         self.predictor = MarkovPredictor(self.trainer.matrix)
@@ -19,7 +20,7 @@ class MarkovModel:
     def train(self, training_states: List[List[str]]) -> None:
         """
         Batch fits model state weights.
-        
+
         Args:
             training_states: A list of state sequences (lists of string state names).
         """
@@ -27,13 +28,13 @@ class MarkovModel:
 
     def observe(self, previous: str, current: str) -> float:
         """
-        Online streaming update. Returns the transition probability of the step, 
+        Online streaming update. Returns the transition probability of the step,
         then increments transition counts streamingly.
-        
+
         Args:
             previous: Source state string.
             current: Target state string.
-            
+
         Returns:
             The estimated probability P(current | previous).
         """
@@ -67,15 +68,8 @@ class MarkovModel:
 
     def save(self, path: str) -> None:
         """Serializes and persists the model structure to disk as JSON."""
-        metadata = {
-            "model_version": self.model_version,
-            "smoothing": self.trainer.matrix.smoothing
-        }
-        serialized = MarkovPersistence.serialize(
-            self.trainer.counter, 
-            self.trainer.matrix, 
-            metadata
-        )
+        metadata = {"model_version": self.model_version, "smoothing": self.trainer.matrix.smoothing}
+        serialized = MarkovPersistence.serialize(self.trainer.counter, self.trainer.matrix, metadata)
         with open(path, "w") as f:
             f.write(serialized)
 
@@ -91,9 +85,4 @@ class MarkovModel:
 
     def explain(self, previous: str, current: str) -> TransitionExplanation:
         """Computes diagnostic mathematical explanations backing the transition probability."""
-        return MarkovExplainer.explain(
-            previous, 
-            current, 
-            self.trainer.counter, 
-            self.trainer.matrix
-        )
+        return MarkovExplainer.explain(previous, current, self.trainer.counter, self.trainer.matrix)

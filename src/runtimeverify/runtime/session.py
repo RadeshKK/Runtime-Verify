@@ -4,13 +4,17 @@ from pydantic import BaseModel, Field
 from runtimeverify.state.execution import ExecutionState
 from runtimeverify.runtime.lifecycle import RuntimeLifecycle
 
+
 class SessionState(BaseModel):
     """Immutable/mutable boundary representing the state tracking profile of an active agent session."""
+
     session_id: str = Field(..., description="Unique ID of the agent session")
     agent_id: str = Field(..., description="Unique ID of the agent being monitored")
     current_state: Optional[ExecutionState] = Field(None, description="The most recently resolved semantic state")
     previous_state: Optional[ExecutionState] = Field(None, description="The preceding semantic state")
-    history: List[ExecutionState] = Field(default_factory=list, description="Array sequence of all ExecutionStates in this session")
+    history: List[ExecutionState] = Field(
+        default_factory=list, description="Array sequence of all ExecutionStates in this session"
+    )
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Metadata specific to this session scope")
 
 
@@ -19,7 +23,7 @@ class SessionManager:
     Manager class coordinating active session instances and isolation boundaries.
     The SessionManager is thread-safe and retains historical trace arrays.
     """
-    
+
     def __init__(self):
         self._lock = threading.Lock()
         self._sessions: Dict[str, SessionState] = {}
@@ -44,7 +48,7 @@ class SessionManager:
             session = self._sessions.get(session_id)
             if not session:
                 raise KeyError(f"Session '{session_id}' does not exist.")
-            
+
             session.previous_state = session.current_state
             session.current_state = new_state
             session.history.append(new_state)
@@ -59,7 +63,7 @@ class SessionManager:
         with self._lock:
             self._sessions.pop(session_id, None)
             self._lifecycles.pop(session_id, None)
-            
+
     def clear(self) -> None:
         """Clears all session states."""
         with self._lock:

@@ -2,10 +2,12 @@ from typing import Dict, Any, Optional
 from pydantic import Field
 from runtimeverify.events.base import Event
 
+
 class ToolEvent(Event):
     """
     Event representing a tool invocation by an agent, containing inputs, outputs, and execution metrics.
     """
+
     type: str = Field("tool", description="Event type discriminator")
     tool_name: str = Field(..., description="The name of the tool invoked")
     arguments: Dict[str, Any] = Field(default_factory=dict, description="Arguments passed to the tool invocation")

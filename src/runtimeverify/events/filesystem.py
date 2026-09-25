@@ -2,10 +2,12 @@ from typing import Optional
 from pydantic import Field
 from runtimeverify.events.base import Event
 
+
 class FilesystemEvent(Event):
     """
     Event representing a file system interaction, such as reading, writing, or deleting files.
     """
+
     type: str = Field("filesystem", description="Event type discriminator")
     action: str = Field(..., description="The filesystem operation (e.g., read, write, delete, create, list, move)")
     path: str = Field(..., description="The path of the target file or directory")

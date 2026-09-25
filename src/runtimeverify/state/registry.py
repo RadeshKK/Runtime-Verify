@@ -2,11 +2,13 @@ from typing import Dict, Optional, Set
 from runtimeverify.state.hierarchy import StateHierarchy
 from runtimeverify.state.categories import StateCategory
 
+
 class StateRegistry:
     """
     Central registry for known or allowed semantic states within the framework.
     Helps validate states during encoding and prevents runtime spelling drift.
     """
+
     def __init__(self):
         self._states: Dict[str, StateHierarchy] = {}
         self._categories: Dict[str, StateCategory] = {}
@@ -14,7 +16,7 @@ class StateRegistry:
     def register(self, name: str, hierarchy: StateHierarchy, category: StateCategory) -> None:
         """
         Registers a semantic state template.
-        
+
         Args:
             name: The lookup name (e.g. 'WRITE_SOURCE')
             hierarchy: The StateHierarchy instance describing its taxonomy path

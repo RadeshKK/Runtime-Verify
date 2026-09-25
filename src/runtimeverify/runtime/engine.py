@@ -5,12 +5,13 @@ from runtimeverify.runtime.session import SessionManager
 from runtimeverify.runtime.pipeline import RuntimePipeline
 from runtimeverify.runtime.context import Decision
 
+
 class RuntimeEngine:
     """
     Main orchestration engine of the runtime verification framework.
     Coordinates session context managers, encoders, dispatchers, and policy engines.
     """
-    
+
     def __init__(self, pipeline: RuntimePipeline, session_manager: Optional[SessionManager] = None):
         self.pipeline = pipeline
         self.session_manager = session_manager or SessionManager()
@@ -40,10 +41,10 @@ class RuntimeEngine:
     def observe(self, event: Event) -> Decision:
         """
         Observes a raw event, running it through the complete verification pipeline.
-        
+
         Args:
             event: The incoming Telemetry Event instance.
-            
+
         Returns:
             A structured Decision result detailing policy evaluation.
         """
@@ -56,7 +57,7 @@ class RuntimeEngine:
         # 1. Access/Create Session Isolation Boundary
         session_id = event.session_id
         agent_id = event.agent_id
-        
+
         # Get active session state
         self.session_manager.get_or_create(session_id, agent_id)
 

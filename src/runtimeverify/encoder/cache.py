@@ -1,11 +1,12 @@
 from typing import Dict, Any, Optional
 
+
 class StateEncoderCache:
     """
-    Thread-safe in-memory cache to store expensive resource classifications 
+    Thread-safe in-memory cache to store expensive resource classifications
     and classifications (e.g. mapping paths/URLs to risk classifications).
     """
-    
+
     def __init__(self, max_size: int = 1000):
         self._cache: Dict[str, Dict[str, Any]] = {}
         self.max_size = max_size

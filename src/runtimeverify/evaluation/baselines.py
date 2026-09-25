@@ -5,8 +5,10 @@ from runtimeverify.detector.base import BaseDetector, DetectorMetadata
 from runtimeverify.detector.results import DetectorResult, DetectorExplanation
 from runtimeverify.markov.model import MarkovModel
 
+
 class RandomDetector(BaseDetector):
     """Sanity check baseline: makes random anomaly decisions based on a configured probability."""
+
     def __init__(self, anomaly_rate: float = 0.05, name: str = "RandomBaseline"):
         self.anomaly_rate = anomaly_rate
         self._name = name
@@ -20,11 +22,11 @@ class RandomDetector(BaseDetector):
     def observe(self, state: StateInterface) -> DetectorResult:
         is_anomaly = random.random() < self.anomaly_rate
         decision = "ANOMALY" if is_anomaly else "NORMAL"
-        
+
         explanation = DetectorExplanation(
             detector_name=self._name,
             summary=f"Random decision resolved: {decision}.",
-            evidence={"random_roll": is_anomaly}
+            evidence={"random_roll": is_anomaly},
         )
 
         return DetectorResult(
@@ -32,7 +34,7 @@ class RandomDetector(BaseDetector):
             confidence=0.5,
             decision=decision,
             explanation=explanation,
-            raw_metrics={"anomaly_rate": self.anomaly_rate}
+            raw_metrics={"anomaly_rate": self.anomaly_rate},
         )
 
     def reset(self) -> None:
@@ -50,13 +52,14 @@ class RandomDetector(BaseDetector):
 
 class ThresholdDetector(BaseDetector):
     """
-    Simple rule-based baseline: flags an anomaly if the state's 
+    Simple rule-based baseline: flags an anomaly if the state's
     metadata risk level exceeds a configured threshold (e.g. critical).
     """
+
     def __init__(self, risk_threshold: str = "critical", name: str = "ThresholdBaseline"):
         self.risk_threshold = risk_threshold.lower()
         self._name = name
-        
+
         # Risk priority order
         self._priorities = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 
@@ -68,17 +71,17 @@ class ThresholdDetector(BaseDetector):
 
     def observe(self, state: StateInterface) -> DetectorResult:
         state_risk = state.metadata.risk_level.lower()
-        
+
         state_priority = self._priorities.get(state_risk, 0)
         threshold_priority = self._priorities.get(self.risk_threshold, 3)
-        
+
         is_anomaly = state_priority >= threshold_priority
         decision = "ANOMALY" if is_anomaly else "NORMAL"
 
         explanation = DetectorExplanation(
             detector_name=self._name,
             summary=f"State risk level '{state_risk}' checked against threshold '{self.risk_threshold}'.",
-            evidence={"state_risk": state_risk, "threshold": self.risk_threshold}
+            evidence={"state_risk": state_risk, "threshold": self.risk_threshold},
         )
 
         return DetectorResult(
@@ -86,7 +89,7 @@ class ThresholdDetector(BaseDetector):
             confidence=1.0,
             decision=decision,
             explanation=explanation,
-            raw_metrics={"risk_level": state_risk}
+            raw_metrics={"risk_level": state_risk},
         )
 
     def reset(self) -> None:
@@ -107,6 +110,7 @@ class FrequencyDetector(BaseDetector):
     Transition frequency baseline: monitors state transition probabilities from a Markov model.
     Flags an anomaly if the estimated transition probability is below a static probability threshold.
     """
+
     def __init__(self, markov_model: MarkovModel, min_prob_threshold: float = 0.05, name: str = "FrequencyBaseline"):
         self.model = markov_model
         self.threshold = min_prob_threshold
@@ -125,10 +129,10 @@ class FrequencyDetector(BaseDetector):
         session_id = state.context.session_id
         curr_name = state.name
         prev_name = self._session_prev_state.get(session_id)
-        
+
         # Save current state as previous for next step
         self._session_prev_state[session_id] = curr_name
-        
+
         # PENDING on the first state in sequence
         if prev_name is None:
             return DetectorResult(
@@ -136,22 +140,20 @@ class FrequencyDetector(BaseDetector):
                 confidence=0.5,
                 decision="PENDING",
                 explanation=DetectorExplanation(
-                    detector_name=self._name,
-                    summary="First state in sequence, transition pending.",
-                    evidence={}
-                )
+                    detector_name=self._name, summary="First state in sequence, transition pending.", evidence={}
+                ),
             )
 
         # Retrieve transition probability
         p_val = self.model.transition_probability(prev_name, curr_name)
-        
+
         is_anomaly = p_val < self.threshold
         decision = "ANOMALY" if is_anomaly else "NORMAL"
 
         explanation = DetectorExplanation(
             detector_name=self._name,
             summary=f"Transition probability P({curr_name}|{prev_name}) = {p_val:.4f} compared to limit {self.threshold:.4f}.",
-            evidence={"prev_state": prev_name, "curr_state": curr_name, "probability": p_val}
+            evidence={"prev_state": prev_name, "curr_state": curr_name, "probability": p_val},
         )
 
         return DetectorResult(
@@ -159,12 +161,12 @@ class FrequencyDetector(BaseDetector):
             confidence=1.0,
             decision=decision,
             explanation=explanation,
-            raw_metrics={"probability": p_val}
+            raw_metrics={"probability": p_val},
         )
 
     def reset(self) -> None:
         self._session_prev_state.clear()
-        
+
     def reset_session(self, session_id: str) -> None:
         self._session_prev_state.pop(session_id, None)
 

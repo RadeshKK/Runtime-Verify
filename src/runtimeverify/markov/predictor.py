@@ -2,12 +2,13 @@ import math
 from typing import List, Tuple
 from runtimeverify.markov.matrix import ProbabilityMatrix
 
+
 class MarkovPredictor:
     """
     Inference helper over an estimated ProbabilityMatrix.
     Calculates sequence joint probabilities, logs probabilities, and predicts next states.
     """
-    
+
     def __init__(self, matrix: ProbabilityMatrix):
         self.matrix = matrix
 
@@ -26,10 +27,10 @@ class MarkovPredictor:
             return 0.0
         if len(sequence) == 1:
             return 1.0 if sequence[0].upper() in self.matrix.states else 0.0
-            
+
         prob = 1.0
         for i in range(len(sequence) - 1):
-            prob *= self.transition_probability(sequence[i], sequence[i+1])
+            prob *= self.transition_probability(sequence[i], sequence[i + 1])
         return prob
 
     def sequence_log_probability(self, sequence: List[str]) -> float:
@@ -42,10 +43,10 @@ class MarkovPredictor:
             return -float("inf")
         if len(sequence) == 1:
             return 0.0 if sequence[0].upper() in self.matrix.states else -float("inf")
-            
+
         log_prob = 0.0
         for i in range(len(sequence) - 1):
-            p = self.transition_probability(sequence[i], sequence[i+1])
+            p = self.transition_probability(sequence[i], sequence[i + 1])
             if p <= 0.0:
                 return -float("inf")
             log_prob += math.log(p)
@@ -59,8 +60,8 @@ class MarkovPredictor:
         curr = current_state.upper()
         if curr not in self.matrix.states:
             return []
-            
+
         targets = self.matrix.probabilities.get(curr, {})
         sorted_targets = sorted(targets.items(), key=lambda item: item[1], reverse=True)
-        
+
         return [(state, prob) for state, prob in sorted_targets if prob > 0.0][:top_k]

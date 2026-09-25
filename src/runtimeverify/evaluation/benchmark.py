@@ -1,53 +1,74 @@
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any
 import random
 from runtimeverify.events.base import Event
 from runtimeverify.runtime.engine import RuntimeEngine
 from runtimeverify.evaluation.replay import SessionReplayer
 from runtimeverify.evaluation.metrics import EvaluationMetrics
 from runtimeverify.sprt.engine import SPRTEngine
-from runtimeverify.state.base import StateInterface
 from runtimeverify.state.context import StateContext
+
 
 class MockState:
     """Simplified StateInterface implementation for synthetic benchmarks."""
-    def __init__(self, name: str, session_id: str = "test-session"):
+
+    def __init__(self, name: str, session_id: str = "test-session", agent_id: str = "test-agent"):
         self._name = name
         self._session_id = session_id
         # Minimal mock properties to satisfy SPRTEngine
-        self.context = StateContext(session_id=session_id)
+        self._context = StateContext(agent_id=agent_id, session_id=session_id)
         # Other properties can be added if needed by the detector
         self.category = None
         self.hierarchy = None
         self.metadata = None
 
     @property
-    def name(self) -> str: return self._name
+    def name(self) -> str:
+        return self._name
+
     @property
-    def id(self) -> str: return self._name
+    def id(self) -> str:
+        return self._name
+
     @property
-    def context(self) -> StateContext: return self._context
-    # Need to fix the init and properties for a real MockState
+    def context(self) -> StateContext:
+        return self._context
+
 
 class BenchmarkState:
     """Correctly implements StateInterface for benchmarks."""
-    def __init__(self, name: str, session_id: str = "test-session"):
+
+    def __init__(self, name: str, session_id: str = "test-session", agent_id: str = "test-agent"):
         self._name = name
-        self._context = StateContext(session_id=session_id)
+        self._context = StateContext(agent_id=agent_id, session_id=session_id)
 
     @property
-    def name(self) -> str: return self._name
+    def name(self) -> str:
+        return self._name
+
     @property
-    def id(self) -> str: return self._name
+    def id(self) -> str:
+        return self._name
+
     @property
-    def context(self) -> StateContext: return self._context
+    def context(self) -> StateContext:
+        return self._context
+
     @property
-    def category(self) -> Any: return None
+    def category(self) -> Any:
+        return None
+
     @property
-    def hierarchy(self) -> Any: return None
+    def hierarchy(self) -> Any:
+        return None
+
     @property
-    def metadata(self) -> Any: return None
+    def metadata(self) -> Any:
+        return None
+
     @property
-    def dot_path(self) -> str: return self._name
+    def dot_path(self) -> str:
+        return self._name
+
 
 class BenchmarkRunner:
     """
@@ -98,13 +119,15 @@ class BenchmarkRunner:
             "metrics": metrics,
             "average_delay": avg_delay,
             "avg_latency": avg_latency,
-            "all_step_latencies": all_step_latencies
+            "all_step_latencies": all_step_latencies,
         }
+
 
 class MonteCarloBenchmarkRunner:
     """
     Validates the empirical alpha and beta of an SPRT engine using Monte Carlo simulation.
     """
+
     def __init__(self, iterations: int = 10000, trace_length: int = 100):
         self.iterations = iterations
         self.trace_length = trace_length
@@ -130,7 +153,8 @@ class MonteCarloBenchmarkRunner:
                     break
                 curr_state = engine.model.sample(curr_state)
 
-            if triggered: h0_triggered += 1
+            if triggered:
+                h0_triggered += 1
 
         # 2. Generate H1 (Alternative) traces
         h1_triggered = 0
@@ -146,9 +170,14 @@ class MonteCarloBenchmarkRunner:
                 if res.decision == "ANOMALY":
                     triggered = True
                     break
-                curr_state = engine.hypothesis.alternative_model.sample(curr_state) if engine.hypothesis.alternative_model else "UNKNOWN"
+                curr_state = (
+                    engine.hypothesis.alternative_model.sample(curr_state)
+                    if engine.hypothesis.alternative_model
+                    else "UNKNOWN"
+                )
 
-            if triggered: h1_triggered += 1
+            if triggered:
+                h1_triggered += 1
 
         empirical_alpha = h0_triggered / self.iterations
         empirical_beta = 1.0 - (h1_triggered / self.iterations)
@@ -159,5 +188,5 @@ class MonteCarloBenchmarkRunner:
             "theoretical_beta": engine.hypothesis.beta,
             "empirical_beta": empirical_beta,
             "diff_alpha": abs(empirical_alpha - engine.hypothesis.alpha),
-            "diff_beta": abs(empirical_beta - engine.hypothesis.beta)
+            "diff_beta": abs(empirical_beta - engine.hypothesis.beta),
         }

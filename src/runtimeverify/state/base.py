@@ -4,13 +4,14 @@ from runtimeverify.state.hierarchy import StateHierarchy
 from runtimeverify.state.context import StateContext
 from runtimeverify.state.metadata import StateMetadata
 
+
 @runtime_checkable
 class StateInterface(Protocol):
     """
     Protocol describing the standard interface of any state representation.
     Ensures that custom state structures are compatible with the detector API.
     """
-    
+
     @property
     def id(self) -> str:
         """Returns the unique identifier of the state instance."""

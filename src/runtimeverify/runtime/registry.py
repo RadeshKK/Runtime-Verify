@@ -1,12 +1,13 @@
 from typing import Dict, List
 from runtimeverify.runtime.pipeline import RuntimePipeline
 
+
 class PipelineRegistry:
     """
     Registry for managing multiple RuntimePipeline configurations.
     Allows downstream applications to swap pipeline rules dynamically.
     """
-    
+
     def __init__(self):
         self._pipelines: Dict[str, RuntimePipeline] = {}
 

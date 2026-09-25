@@ -2,12 +2,13 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Any
 
+
 class RuntimeExecutor:
     """
-    Worker pool executor to run telemetry monitoring loops or pipeline checks 
+    Worker pool executor to run telemetry monitoring loops or pipeline checks
     within isolated workers, protecting sessions from cross-interference.
     """
-    
+
     def __init__(self, max_workers: int = 10):
         self._thread_pool = ThreadPoolExecutor(max_workers=max_workers)
 

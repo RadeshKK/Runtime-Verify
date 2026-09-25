@@ -1,17 +1,20 @@
 from typing import Callable, Dict, Set, Protocol, runtime_checkable, Optional
 from runtimeverify.events.base import Event
 
+
 @runtime_checkable
 class EventListener(Protocol):
     """Protocol for event bus listeners."""
-    def __call__(self, event: Event) -> None:
-        ...
+
+    def __call__(self, event: Event) -> None: ...
+
 
 class EventBus:
     """
     In-process, thread-safe Event Bus that decouples event generators (collectors)
     from downstream consumers (detectors, metric systems, dashboards).
     """
+
     def __init__(self):
         self._listeners: Dict[str, Set[Callable[[Event], None]]] = {}
         self._global_listeners: Set[Callable[[Event], None]] = set()
@@ -19,7 +22,7 @@ class EventBus:
     def subscribe(self, listener: Callable[[Event], None], event_type: Optional[str] = None) -> None:
         """
         Subscribes a listener callback to events.
-        
+
         Args:
             listener: Callback function taking an Event.
             event_type: If provided, only events matching this type are sent.
@@ -43,7 +46,7 @@ class EventBus:
     def publish(self, event: Event) -> None:
         """
         Publishes an event to all registered listeners.
-        
+
         Args:
             event: The Event instance to publish.
         """

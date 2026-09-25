@@ -1,9 +1,10 @@
 import math
 from runtimeverify.sprt.hypothesis import Hypothesis
 
+
 class WaldThresholds:
     """Computes upper and lower Wald log-likelihood boundaries from a Hypothesis."""
-    
+
     def __init__(self, hypothesis: Hypothesis):
         self.alpha = hypothesis.alpha
         self.beta = hypothesis.beta

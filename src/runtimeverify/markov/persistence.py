@@ -2,19 +2,16 @@ import json
 from typing import Dict, Any, Tuple
 from runtimeverify.markov.matrix import TransitionCounter, ProbabilityMatrix
 
+
 class MarkovPersistence:
     """
     Handles portable serialization and deserialization of Markov Chain models.
-    Converts state maps, transition counts, estimation probabilities, and metadata 
+    Converts state maps, transition counts, estimation probabilities, and metadata
     to/from a clean JSON representation (no pickle or runtime coupling).
     """
 
     @staticmethod
-    def serialize(
-        counter: TransitionCounter, 
-        matrix: ProbabilityMatrix, 
-        metadata: Dict[str, Any]
-    ) -> str:
+    def serialize(counter: TransitionCounter, matrix: ProbabilityMatrix, metadata: Dict[str, Any]) -> str:
         """Serializes the model components into a standard JSON string."""
         payload = {
             "schema_version": "1.0",
@@ -31,7 +28,7 @@ class MarkovPersistence:
     @staticmethod
     def deserialize(json_str: str) -> Tuple[TransitionCounter, ProbabilityMatrix, Dict[str, Any]]:
         """
-        Deserializes a JSON string back into a TransitionCounter, 
+        Deserializes a JSON string back into a TransitionCounter,
         ProbabilityMatrix, and metadata dictionary.
         """
         try:
@@ -57,5 +54,5 @@ class MarkovPersistence:
         matrix.probabilities = data.get("probabilities", {})
 
         metadata = data.get("metadata", {})
-        
+
         return counter, matrix, metadata

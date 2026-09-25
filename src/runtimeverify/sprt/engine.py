@@ -9,6 +9,7 @@ from runtimeverify.sprt.hypothesis import Hypothesis
 from runtimeverify.sprt.thresholds import WaldThresholds
 from runtimeverify.sprt.decision import SPRTDecision
 
+
 class SPRTEngine(BaseDetector):
     """
     Stateful streaming SPRT accumulator engine.
@@ -16,7 +17,9 @@ class SPRTEngine(BaseDetector):
     Consumes transition probabilities from MarkovModel and aggregates log-likelihood ratios.
     """
 
-    def __init__(self, markov_model: MarkovModel, hypothesis: Hypothesis, name: str = "SPRTDetector", session_ttl: float = 3600.0):
+    def __init__(
+        self, markov_model: MarkovModel, hypothesis: Hypothesis, name: str = "SPRTDetector", session_ttl: float = 3600.0
+    ):
         self.model = markov_model
         self.hypothesis = hypothesis
         self.thresholds = WaldThresholds(hypothesis)
@@ -30,12 +33,7 @@ class SPRTEngine(BaseDetector):
         self._session_last_access: Dict[str, float] = {}
 
     def metadata(self) -> DetectorMetadata:
-        return DetectorMetadata(
-            name=self._name,
-            version="1.0",
-            supported_categories=[],
-            requires_training=True
-        )
+        return DetectorMetadata(name=self._name, version="1.0", supported_categories=[], requires_training=True)
 
     def fit(self, sequences: List[List[StateInterface]]) -> None:
         """Fits the underlying Markov Model on historical training sequences."""
@@ -52,11 +50,7 @@ class SPRTEngine(BaseDetector):
         decision = self.observe_sprt(state)
 
         # Map SPRTDecision.status to BaseDetector decision literal
-        decision_map = {
-            "ACCEPT_H0": "NORMAL",
-            "ACCEPT_H1": "ANOMALY",
-            "PENDING": "PENDING"
-        }
+        decision_map = {"ACCEPT_H0": "NORMAL", "ACCEPT_H1": "ANOMALY", "PENDING": "PENDING"}
 
         # Resolve explainability details
         if decision.status == "ACCEPT_H1":
@@ -69,11 +63,7 @@ class SPRTEngine(BaseDetector):
         else:
             summary = f"Observation accumulated. Current LLR: {decision.log_likelihood_ratio:.4f}."
 
-        explanation = DetectorExplanation(
-            detector_name=self._name,
-            summary=summary,
-            evidence=decision.evidence
-        )
+        explanation = DetectorExplanation(detector_name=self._name, summary=summary, evidence=decision.evidence)
 
         # Resolve confidence (1 - alpha for anomalies, 1 - beta for normal)
         confidence = 1.0 - self.hypothesis.alpha if decision.status == "ACCEPT_H1" else 1.0 - self.hypothesis.beta
@@ -89,15 +79,14 @@ class SPRTEngine(BaseDetector):
                 "observation_count": decision.observation_count,
                 "lower_threshold": decision.lower_threshold,
                 "upper_threshold": decision.upper_threshold,
-            }
+            },
         )
 
     def _cleanup_sessions(self) -> None:
         """Removes sessions that have not been accessed within the TTL."""
         now = time.time()
         expired_sessions = [
-            sid for sid, last_access in self._session_last_access.items()
-            if now - last_access > self.session_ttl
+            sid for sid, last_access in self._session_last_access.items() if now - last_access > self.session_ttl
         ]
         for sid in expired_sessions:
             self.reset_session(sid)
@@ -143,13 +132,10 @@ class SPRTEngine(BaseDetector):
                 "curr_state": current_name,
                 "p_probability": p_val,
                 "q_probability": q_val,
-                "increment": increment
+                "increment": increment,
             }
         else:
-            evidence = {
-                "curr_state": current_name,
-                "increment": 0.0
-            }
+            evidence = {"curr_state": current_name, "increment": 0.0}
 
         # 4. Save state traces
         self._session_prev_state[session_id] = current_name
@@ -174,7 +160,7 @@ class SPRTEngine(BaseDetector):
             lower_threshold=self.thresholds.lower_boundary,
             upper_threshold=self.thresholds.upper_boundary,
             observation_count=count,
-            evidence=evidence
+            evidence=evidence,
         )
 
     def reset(self) -> None:

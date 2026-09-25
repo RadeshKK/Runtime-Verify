@@ -1,19 +1,20 @@
 from typing import Dict, Any
 from runtimeverify.encoder.base import ResourceClassifier
 
+
 class DefaultResourceClassifier(ResourceClassifier):
     """
-    Standard rule-based Resource Classifier. Inspects targets and tools 
-    to determine semantic classification (e.g. system files vs source files), 
+    Standard rule-based Resource Classifier. Inspects targets and tools
+    to determine semantic classification (e.g. system files vs source files),
     required permission scopes, and baseline execution risk levels.
     """
-    
+
     def classify(self, normalized_event: Dict[str, Any]) -> Dict[str, Any]:
         classified = normalized_event.copy()
         resource = classified.get("resource")
         event_type = classified.get("type")
         action = classified.get("action", "unknown")
-        
+
         resource_type = "unknown"
         risk_level = "low"
         permission_level = "read"

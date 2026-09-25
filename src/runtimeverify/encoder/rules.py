@@ -1,11 +1,13 @@
 from typing import Dict, Any, List
 from runtimeverify.encoder.base import RuleEngine
 
+
 class Rule:
     """
-    A single deterministic matching rule. If all key-value condition pairs match 
+    A single deterministic matching rule. If all key-value condition pairs match
     the enriched event schema, resolves to the specified target state.
     """
+
     def __init__(self, target_state: str, conditions: Dict[str, Any]):
         self.target_state = target_state
         self.conditions = conditions
@@ -18,12 +20,13 @@ class Rule:
                 return False
         return True
 
+
 class DefaultRuleEngine(RuleEngine):
     """
     Deterministic rule evaluator mapping enriched event variables to semantic states.
     If no configured rule matches, falls back to a template-based state name.
     """
-    
+
     def __init__(self, rules: List[Rule]):
         self.rules = rules
 
@@ -31,7 +34,7 @@ class DefaultRuleEngine(RuleEngine):
         for rule in self.rules:
             if rule.matches(enriched_event):
                 return rule.target_state
-                
+
         # Default fallback string construction: {ACTION}_{RESOURCE_TYPE}
         action = str(enriched_event.get("action", "unknown")).upper()
         resource_type = str(enriched_event.get("resource_type", "unknown")).upper()

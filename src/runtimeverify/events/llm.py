@@ -2,10 +2,12 @@ from typing import Any, Optional
 from pydantic import Field
 from runtimeverify.events.base import Event
 
+
 class LLMEvent(Event):
     """
     Event representing a language model interaction, detailing prompts, model outputs, and usage metrics.
     """
+
     type: str = Field("llm", description="Event type discriminator")
     model: str = Field(..., description="The name of the language model invoked (e.g. gpt-4o, gemini-1.5-pro)")
     prompt: Optional[Any] = Field(None, description="The input prompt structure, list of messages, or raw string")

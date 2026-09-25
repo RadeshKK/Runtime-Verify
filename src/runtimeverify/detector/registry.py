@@ -1,8 +1,10 @@
 from typing import Dict, List
 from runtimeverify.detector.base import BaseDetector
 
+
 class DetectorRegistry:
     """Registry managing available statistical detectors."""
+
     def __init__(self):
         self._detectors: Dict[str, BaseDetector] = {}
 

@@ -1,6 +1,7 @@
 from typing import List
 from runtimeverify.markov.matrix import TransitionCounter, ProbabilityMatrix
 
+
 class MarkovTrainer:
     """
     Coordinates count accumulation and updates estimated probabilities.

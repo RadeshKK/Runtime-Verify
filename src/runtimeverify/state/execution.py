@@ -7,12 +7,14 @@ from runtimeverify.state.context import StateContext
 from runtimeverify.state.metadata import StateMetadata
 from runtimeverify.state.provenance import StateProvenance
 
+
 class ExecutionState(BaseModel):
     """
     Immutable representation of a semantic execution state.
     Provides the standard structure evaluated by behavior graphs and detectors.
     Fits the StateInterface protocol.
     """
+
     model_config = ConfigDict(
         frozen=True,
         arbitrary_types_allowed=True,
@@ -23,12 +25,13 @@ class ExecutionState(BaseModel):
     category: StateCategory = Field(..., description="The high-level category of execution")
     hierarchy: StateHierarchy = Field(..., description="The hierarchical path representation of the state")
     context: StateContext = Field(..., description="Active context parameters during state transition")
-    metadata: StateMetadata = Field(default_factory=StateMetadata, description="Risk levels and other operational metadata")
-    
+    metadata: StateMetadata = Field(
+        default_factory=StateMetadata, description="Risk levels and other operational metadata"
+    )
+
     schema_version: str = Field("1.0", description="Schema version of the ExecutionState model")
     encoder_version: str = Field("1.0", description="Version of the encoder that generated this state")
     provenance: Optional[StateProvenance] = Field(None, description="Provenance tracing evidence and rule details")
-
 
     @property
     def dot_path(self) -> str:

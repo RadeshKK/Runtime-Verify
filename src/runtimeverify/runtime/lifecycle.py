@@ -1,10 +1,12 @@
 from enum import Enum
 
+
 class RuntimeState(str, Enum):
     """
     Represents the operational state of the runtime pipeline state machine.
     Simplifies policy enforcement and state-tracking integrations.
     """
+
     CREATED = "created"
     INITIALIZED = "initialized"
     RUNNING = "running"
@@ -15,7 +17,7 @@ class RuntimeState(str, Enum):
 
 class RuntimeLifecycle:
     """Manages state transitions of the runtime pipeline machine, preventing illegal moves."""
-    
+
     def __init__(self):
         self._state = RuntimeState.CREATED
         # Define allowed transitions

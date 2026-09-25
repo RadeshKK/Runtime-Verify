@@ -7,13 +7,14 @@ from runtimeverify.runtime.dispatcher import Dispatcher
 from runtimeverify.runtime.context import Decision
 from runtimeverify.policy.engine import PolicyEngine
 
+
 class RuntimePipeline:
     """
     Coordinated sequential execution pipeline representing the core runtime flow.
     Stages: Receive -> Validate -> Encode -> Dispatch -> Policy -> Publish -> Persist.
     Each stage can be overridden/replaced for extensibility.
     """
-    
+
     def __init__(
         self,
         encoder: StateEncoderPipeline,
@@ -41,25 +42,25 @@ class RuntimePipeline:
         try:
             # 1. Receive
             event = self.receive_stage(raw_payload)
-            
+
             # 2. Validate
             event = self.validate_stage(event)
-            
+
             # 3. Encode
             state = self.encode_stage(event)
-            
+
             # 4. Dispatch (and Detect)
             detector_results = self.dispatch_stage(state)
-            
+
             # 5. Policy
             decision = self.policy_stage(event.session_id, event.agent_id, detector_results)
-            
+
             # 6. Publish
             self.publish_stage(decision)
-            
+
             # 7. Persist
             self.persist_stage(decision)
-            
+
             return decision
         except Exception as e:
             self._logger.critical(f"Runtime pipeline failure: {e}", exc_info=True)
@@ -70,7 +71,7 @@ class RuntimePipeline:
                 status="BLOCK",
                 confidence=0.0,
                 evidence={"pipeline_failure": str(e)},
-                triggered_policies=["pipeline_safety_fallback"]
+                triggered_policies=["pipeline_safety_fallback"],
             )
 
     # --- Default Stage Implementations ---
