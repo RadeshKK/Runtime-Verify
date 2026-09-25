@@ -1,0 +1,146 @@
+version: "1.0"
+name: "default-security-policy"
+description: "Production baseline policy set for autonomous AI agents"
+conflict_resolution: "most_restrictive"
+default_decision: "ALLOW"
+default_severity: "INFO"
+
+policies:
+  # 1. Credential & Secret Protection (BLOCK)
+  - id: "deny-ssh-keys"
+    name: "Block SSH Private Keys"
+    description: "Prevent agents from accessing user SSH private keys or configuration"
+    enabled: true
+    decision: "BLOCK"
+    severity: "CRITICAL"
+    priority: 100
+    match:
+      path:
+        glob: "~/.ssh/*"
+    reason: "Access to private SSH keys and configurations is strictly prohibited."
+
+  - id: "deny-aws-credentials"
+    name: "Block AWS Credentials"
+    description: "Prevent agents from reading AWS credential files"
+    enabled: true
+    decision: "BLOCK"
+    severity: "CRITICAL"
+    priority: 100
+    match:
+      path:
+        glob: "~/.aws/*"
+    reason: "Access to cloud credentials and access keys is strictly prohibited."
+
+  - id: "deny-env-files"
+    name: "Block Environment Secret Files"
+    description: "Prevent direct reading of .env configuration files containing secrets"
+    enabled: true
+    decision: "BLOCK"
+    severity: "HIGH"
+    priority: 90
+    match:
+      path:
+        glob: ".env*"
+    reason: "Direct access to environment secrets (.env*) is blocked."
+
+  # 2. Shell Command Guardrails (BLOCK)
+  - id: "block-destructive-rm"
+    name: "Block Destructive File Deletions"
+    description: "Prevent shell execution of destructive rm commands"
+    enabled: true
+    decision: "BLOCK"
+    severity: "CRITICAL"
+    priority: 95
+    match:
+      command:
+        destructive: true
+    reason: "Destructive shell commands (e.g. rm -rf, mkfs, dd) are prohibited."
+
+  - id: "block-curl-pipe-bash"
+    name: "Block Pipe-to-Shell Invocations"
+    description: "Prevent downloading remote scripts and immediately executing them in a subshell"
+    enabled: true
+    decision: "BLOCK"
+    severity: "CRITICAL"
+    priority: 95
+    match:
+      command:
+        pipe_to_shell: true
+    reason: "Remote script execution via pipe to shell (e.g. curl | bash) is blocked."
+
+  # 3. Network Egress Protection (BLOCK)
+  - id: "block-sensitive-network"
+    name: "Block Cloud IMDS Endpoints"
+    description: "Prevent Server-Side Request Forgery against cloud metadata endpoints"
+    enabled: true
+    decision: "BLOCK"
+    severity: "CRITICAL"
+    priority: 100
+    match:
+      event_type: "network.request"
+      network:
+        sensitive_only: true
+    reason: "Network requests to cloud IMDS endpoints or internal loopback are prohibited."
+
+  - id: "block-unknown-network"
+    name: "Block Unknown Network Egress"
+    description: "Prevent outbound connections to unrecognized external destinations"
+    enabled: true
+    decision: "BLOCK"
+    severity: "MEDIUM"
+    priority: 50
+    match:
+      event_type: "network.request"
+      network:
+        unknown_only: true
+    reason: "Outbound network connection to untrusted or unknown external host is blocked."
+
+  # 4. Human Review Workflows (REVIEW)
+  - id: "review-git-push"
+    name: "Review Remote Git Push"
+    description: "Require human approval before publishing local commits to remote git repositories"
+    enabled: true
+    decision: "REVIEW"
+    severity: "MEDIUM"
+    priority: 70
+    match:
+      git:
+        operations: ["push"]
+    reason: "Publishing changes to remote repositories requires human verification."
+
+  - id: "review-npm-install"
+    name: "Review Package Installation"
+    description: "Require review before installing third-party packages from registries"
+    enabled: true
+    decision: "REVIEW"
+    severity: "MEDIUM"
+    priority: 60
+    match:
+      command:
+        regex: "\\b(npm\\s+(i|install)|yarn\\s+add|pip\\s+install)\\b"
+    reason: "Installing external package dependencies requires review."
+
+  # 5. Whitelisted Safe Actions (ALLOW)
+  - id: "allow-git-status"
+    name: "Allow Git Status"
+    description: "Explicitly permit inspecting git working tree status"
+    enabled: true
+    decision: "ALLOW"
+    severity: "INFO"
+    priority: 10
+    match:
+      command:
+        exact: "git status"
+    reason: "Inspecting git status is permitted."
+
+  - id: "allow-pytest"
+    name: "Allow Pytest Test Execution"
+    description: "Explicitly permit running test suites via pytest"
+    enabled: true
+    decision: "ALLOW"
+    severity: "INFO"
+    priority: 10
+    match:
+      command:
+        prefix: "pytest"
+    reason: "Executing unit and integration tests is permitted."

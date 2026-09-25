@@ -1,0 +1,57 @@
+version: "1.0"
+name: "strict-zero-trust-policy"
+description: "Zero-trust policy set requiring explicit allowlists; default decision is BLOCK"
+conflict_resolution: "most_restrictive"
+default_decision: "BLOCK"
+default_severity: "HIGH"
+
+policies:
+  # Explicit Allow-list
+  - id: "allow-read-src"
+    name: "Allow Reading Source Code"
+    description: "Permit read-only access to repository source code files"
+    enabled: true
+    decision: "ALLOW"
+    severity: "INFO"
+    match:
+      event_type: "filesystem.read"
+      path:
+        prefix: "src/"
+    reason: "Reading source directory files is permitted."
+
+  - id: "allow-safe-tests"
+    name: "Allow Pytest"
+    description: "Permit running pytest within sandbox"
+    enabled: true
+    decision: "ALLOW"
+    severity: "INFO"
+    match:
+      command:
+        prefix: "pytest"
+    reason: "Running test suites is permitted."
+
+  - id: "allow-trusted-network"
+    name: "Allow Trusted LLM and Registry Endpoints"
+    description: "Permit outbound connections to approved vendor endpoints"
+    enabled: true
+    decision: "ALLOW"
+    severity: "INFO"
+    match:
+      network:
+        domains:
+          - "api.openai.com"
+          - "api.anthropic.com"
+          - "github.com"
+          - "pypi.org"
+    reason: "Outbound communication to approved services is allowed."
+
+  # Mandatory Reviews
+  - id: "review-any-write"
+    name: "Review Filesystem Modifications"
+    description: "All file writes must be human-reviewed"
+    enabled: true
+    decision: "REVIEW"
+    severity: "MEDIUM"
+    match:
+      event_type: "filesystem.write"
+    reason: "File modifications require explicit approval under zero-trust."

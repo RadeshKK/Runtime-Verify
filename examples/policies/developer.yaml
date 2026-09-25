@@ -1,0 +1,40 @@
+version: "1.0"
+name: "developer-friendly-policy"
+description: "Permissive policy set for rapid agent development with essential guardrails"
+conflict_resolution: "most_restrictive"
+default_decision: "ALLOW"
+default_severity: "INFO"
+
+policies:
+  - id: "block-destructive-shell"
+    name: "Block Destructive Commands"
+    description: "Prevent accidental deletion of root or filesystem drives"
+    enabled: true
+    decision: "BLOCK"
+    severity: "CRITICAL"
+    match:
+      command:
+        destructive: true
+    reason: "Destructive commands (rm -rf /, format, mkfs) are prohibited."
+
+  - id: "block-ssh-keys"
+    name: "Block SSH Keys"
+    description: "Protect user private keys"
+    enabled: true
+    decision: "BLOCK"
+    severity: "CRITICAL"
+    match:
+      path:
+        glob: "~/.ssh/*"
+    reason: "SSH keys may not be read by agents."
+
+  - id: "review-privileged-commands"
+    name: "Review Sudo Commands"
+    description: "Require human confirmation for sudo and chmod 777"
+    enabled: true
+    decision: "REVIEW"
+    severity: "HIGH"
+    match:
+      command:
+        privileged: true
+    reason: "Privilege escalation commands require human confirmation."
