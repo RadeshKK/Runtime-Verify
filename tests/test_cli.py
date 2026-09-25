@@ -8,6 +8,7 @@ from runtimeverify.cli import app
 
 runner = CliRunner()
 
+
 @pytest.fixture
 def temp_workspace():
     # Setup temporary directory for workspace testing
@@ -18,15 +19,18 @@ def temp_workspace():
     os.chdir(orig_cwd)
     shutil.rmtree(temp_dir)
 
+
 def test_cli_version():
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
     assert "AI Runtime Verification Framework (verify)" in result.stdout
 
+
 def test_cli_doctor():
     result = runner.invoke(app, ["doctor"])
     # May fail doctor checks, but CLI command itself runs successfully (exit code 0)
     assert result.exit_code == 0
+
 
 def test_cli_init_and_train_and_inspect(temp_workspace):
     # 1. Test verify init
@@ -36,10 +40,7 @@ def test_cli_init_and_train_and_inspect(temp_workspace):
     assert os.path.exists(".runtimeverify/rules.json")
 
     # 2. Generate training data
-    traces = [
-        ["START", "READ", "WRITE", "COMMIT"],
-        ["START", "READ", "WRITE", "COMMIT"]
-    ]
+    traces = [["START", "READ", "WRITE", "COMMIT"], ["START", "READ", "WRITE", "COMMIT"]]
     traces_file = "test_traces.json"
     with open(traces_file, "w") as f:
         json.dump(traces, f)
@@ -56,6 +57,8 @@ def test_cli_init_and_train_and_inspect(temp_workspace):
     assert "READ" in result_inspect.stdout
 
     # 5. Test verify explain
-    result_explain = runner.invoke(app, ["explain", "READ", "WRITE", "--model", ".runtimeverify/models/test_model.json"])
+    result_explain = runner.invoke(
+        app, ["explain", "READ", "WRITE", "--model", ".runtimeverify/models/test_model.json"]
+    )
     assert result_explain.exit_code == 0
     assert "Transition Explanation" in result_explain.stdout

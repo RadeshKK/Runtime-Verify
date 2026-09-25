@@ -13,3 +13,5 @@ scratch/
 model.json
 training_traces.json
 *.egg-info/
+dist/
+build/

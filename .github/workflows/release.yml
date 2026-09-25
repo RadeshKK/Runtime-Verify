@@ -1,0 +1,143 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      publish_pypi:
+        description: "Publish packages to PyPI"
+        type: boolean
+        required: true
+        default: false
+      dry_run:
+        description: "Dry-run only (skip actual PyPI publication)"
+        type: boolean
+        required: true
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build-and-validate:
+    name: Build & Validate Release Artifacts
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version-check.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install build tooling
+        run: uv sync --extra dev
+
+      - name: Check and extract version
+        id: version-check
+        run: |
+          VERSION=$(python -c "import tomllib; f=open('pyproject.toml', 'rb'); print(tomllib.load(f)['project']['version'])")
+          echo "Package version in pyproject.toml: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+            if [[ "$TAG_VERSION" != "$VERSION" ]]; then
+              echo "Error: Tag version ($TAG_VERSION) does not match pyproject.toml version ($VERSION)"
+              exit 1
+            fi
+            echo "Tag version matches pyproject.toml: $VERSION"
+          fi
+
+      - name: Build distribution packages (wheel + sdist)
+        run: uv build
+
+      - name: Validate distribution packages with Twine
+        run: uv run twine check --strict dist/*
+
+      - name: Generate SHA-256 Checksums
+        run: |
+          cd dist
+          sha256sum * > CHECKSUMS.sha256
+          cat CHECKSUMS.sha256
+          cd ..
+
+      - name: Test clean isolated installation
+        run: |
+          python -m venv test_env
+          ./test_env/bin/pip install $(ls dist/runtimeverify-*.whl | head -n 1)
+          ./test_env/bin/runtimeverify version
+          ./test_env/bin/runtimeverify check --command "git status"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: dist/
+          retention-days: 7
+
+  github-release:
+    name: Create GitHub Release
+    needs: [build-and-validate]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.dry_run == false)
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/CHECKSUMS.sha256
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+
+  publish-pypi:
+    name: Publish to PyPI (Trusted Publishing)
+    needs: [build-and-validate, github-release]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/runtimeverify
+    if: (startsWith(github.ref, 'refs/tags/v') && github.event_name != 'workflow_dispatch') || (github.event_name == 'workflow_dispatch' && inputs.publish_pypi == true && inputs.dry_run == false)
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: dist/
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          verify-metadata: true
+          skip-existing: false
