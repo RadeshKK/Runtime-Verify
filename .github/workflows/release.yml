@@ -69,14 +69,12 @@ jobs:
         run: uv build
 
       - name: Validate distribution packages with Twine
-        run: uv run twine check --strict dist/*
+        run: uv run twine check --strict dist/*.whl dist/*.tar.gz
 
       - name: Generate SHA-256 Checksums
         run: |
-          cd dist
-          sha256sum * > CHECKSUMS.sha256
+          sha256sum dist/* > CHECKSUMS.sha256
           cat CHECKSUMS.sha256
-          cd ..
 
       - name: Test clean isolated installation
         run: |
@@ -85,11 +83,18 @@ jobs:
           ./test_env/bin/runtimeverify version
           ./test_env/bin/runtimeverify check --command "git status"
 
-      - name: Upload build artifacts
+      - name: Upload distribution packages
         uses: actions/upload-artifact@v4
         with:
-          name: release-artifacts
+          name: pypi-packages
           path: dist/
+          retention-days: 7
+
+      - name: Upload checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-checksums
+          path: CHECKSUMS.sha256
           retention-days: 7
 
   github-release:
@@ -101,11 +106,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download release artifacts
+      - name: Download distribution packages
         uses: actions/download-artifact@v4
         with:
-          name: release-artifacts
+          name: pypi-packages
           path: dist/
+
+      - name: Download checksums
+        uses: actions/download-artifact@v4
+        with:
+          name: release-checksums
+          path: ./
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -115,7 +126,7 @@ jobs:
           files: |
             dist/*.whl
             dist/*.tar.gz
-            dist/CHECKSUMS.sha256
+            CHECKSUMS.sha256
           generate_release_notes: true
           draft: false
           prerelease: false
@@ -129,10 +140,10 @@ jobs:
       url: https://pypi.org/p/runtimeverify
     if: (startsWith(github.ref, 'refs/tags/v') && github.event_name != 'workflow_dispatch') || (github.event_name == 'workflow_dispatch' && inputs.publish_pypi == true && inputs.dry_run == false)
     steps:
-      - name: Download release artifacts
+      - name: Download distribution packages
         uses: actions/download-artifact@v4
         with:
-          name: release-artifacts
+          name: pypi-packages
           path: dist/
 
       - name: Publish package distributions to PyPI
