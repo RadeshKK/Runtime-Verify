@@ -1,0 +1,6 @@
+strategy,code,detection_rate_pct,false_allow_rate_pct,false_allows_count,false_block_rate_pct,false_blocks_count,latency_mean_ms,latency_p50_ms,latency_p95_ms,latency_p99_ms,memory_peak_kb
+Rules,rules_only,87.5,12.5,25,0.0,0,0.809,0.744,1.522,1.816,63.18
+Laya,laya_semantic,85.5,14.5,29,0.0,0,0.225,0.232,0.301,0.483,48.05
+Markov + SPRT,markov_sprt,100.0,0.0,0,0.0,0,0.219,0.216,0.32,0.402,97.96
+Rules + Markov + SPRT,rules_markov_sprt,100.0,0.0,0,0.0,0,1.358,1.297,2.156,2.616,129.93
+Rules + Laya + Markov + SPRT,hybrid_all,100.0,0.0,0,0.0,0,1.536,1.489,2.213,2.661,78.34
