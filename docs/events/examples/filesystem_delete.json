@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "event_id": "a2b3c4d5-e6f1-4a2b-8c3d-4e5f6a1b2c3d",
+  "timestamp": "2026-09-25T12:00:07Z",
+  "session_id": "session_coder_90210",
+  "trace_id": "trace_998877665544",
+  "span_id": "span_55667788",
+  "parent_event_id": null,
+  "agent_id": "code_architect_agent",
+  "agent_type": "coder",
+  "event_type": "filesystem.delete",
+  "action": "delete",
+  "target": "/workspace/Runtime-Verify/scratch/temp_debug.log",
+  "source": "agent",
+  "environment": "production",
+  "context": {
+    "current_directory": "/workspace/Runtime-Verify",
+    "user": "developer",
+    "hostname": "agent-worker-01",
+    "platform": "linux"
+  },
+  "metadata": {},
+  "payload": {
+    "path": "/workspace/Runtime-Verify/scratch/temp_debug.log",
+    "status": "success"
+  }
+}

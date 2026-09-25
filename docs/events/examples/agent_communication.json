@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "event_id": "a3b4c5d6-e7f1-4a3b-8c4d-5e6f7a1b2c3d",
+  "timestamp": "2026-09-25T12:00:13Z",
+  "session_id": "session_coder_90210",
+  "trace_id": "trace_998877665544",
+  "span_id": "span_11223300",
+  "parent_event_id": null,
+  "agent_id": "code_architect_agent",
+  "agent_type": "orchestrator",
+  "event_type": "agent.communication",
+  "action": "send",
+  "target": "qa_testing_agent",
+  "source": "agent",
+  "environment": "production",
+  "context": {
+    "current_directory": "/workspace/Runtime-Verify",
+    "user": "developer",
+    "hostname": "agent-worker-01",
+    "platform": "linux"
+  },
+  "metadata": {},
+  "payload": {
+    "recipient_agent_id": "qa_testing_agent",
+    "sender_agent_id": "code_architect_agent",
+    "message_type": "task_delegation",
+    "content_summary": "Run test suite and verify test coverage on canonical event models"
+  }
+}

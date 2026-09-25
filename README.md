@@ -1,180 +1,367 @@
-# 🛡️ RuntimeVerify: Statistical Runtime Verification for AI Agents
+# 🛡️ RuntimeVerify
 
-[![Python Version](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-0.1.0-orange.svg)]()
+[![CI](https://github.com/RadeshKK/Runtime-Verify/actions/workflows/ci.yml/badge.svg)](https://github.com/RadeshKK/Runtime-Verify/actions/workflows/ci.yml)
+[![Release](https://github.com/RadeshKK/Runtime-Verify/actions/workflows/release.yml/badge.svg)](https://github.com/RadeshKK/Runtime-Verify/actions/workflows/release.yml)
+[![PyPI Version](https://img.shields.io/badge/pypi-0.1.0-blue.svg)](https://pypi.org/project/runtimeverify/)
+[![Python Versions](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://pypi.org/project/runtimeverify/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Security Audit](https://img.shields.io/badge/security-pip--audit%20clean-brightgreen.svg)](https://github.com/RadeshKK/Runtime-Verify/actions)
+[![Type Checked: MyPy](https://img.shields.io/badge/type--check-mypy%20passed-blue.svg)](https://github.com/python/mypy)
+[![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Tests Passing](https://img.shields.io/badge/tests-413%20passed-brightgreen.svg)](https://github.com/RadeshKK/Runtime-Verify/actions)
 
-**Non-intrusive, high-performance behavioral monitoring for AI agents. Detect drift and policy violations using classical statistical process control instead of expensive LLM critics.**
+**Vendor-neutral statistical runtime verification, deterministic policy governance, and behavioral security for single and multi-agent autonomous AI systems.**
 
----
-
-## 🌟 Why RuntimeVerify?
-
-Traditional "guardrail" systems often rely on LLM-based critics to determine if an agent is behaving correctly. This introduces a "recursive cost" problem: you spend tokens and latency to check if you are spending tokens and latency.
-
-`RuntimeVerify` shifts the paradigm from **semantic critique** to **statistical verification**. By treating agent execution as a stochastic process, it learns a "behavioral baseline" and triggers alerts when the agent's trajectory deviates significantly from that baseline.
-
-### 🚀 Key Advantages
-- **⚡ Ultra-Low Latency**: $\approx 1\text{ms}$ overhead per transition.
-- **💰 Zero Token Cost**: No LLM calls required for the verification loop.
-- **📉 Mathematical Rigor**: Powered by Wald's Sequential Probability Ratio Test (SPRT).
-- **🔍 Non-Intrusive**: Minimal instrumentation via Python decorators.
-
-### 🎯 Use-Cases
-- **Sensitive Tool Access**: Ensure an agent doesn't suddenly start reading `/etc/shadow` after a period of normal behavior.
-- **Financial Agents**: Detect behavioral drift in trading agents before they execute an anomalous sequence of trades.
-- **Enterprise Compliance**: Verify that agents adhere to operational policies without introducing runtime bottlenecks.
+RuntimeVerify protects host infrastructure and enterprise environments against autonomous agent misbehavior, prompt injection exploits, credential exfiltration, destructive shell operations, unauthorized multi-agent delegations, and SSRF attacks by enforcing pre-execution action gating before tool dispatch.
 
 ---
 
-## 📐 Technical Architecture
+## 🌟 Key Capabilities
 
-The system transforms raw telemetry into a binary decision (`ALLOW` / `BLOCK`) via a linear pipeline:
-
-```mermaid
-graph LR
-    A[Telemetry SDK] --> B[Semantic Encoder]
-    B --> C[Markov Model]
-    C --> D[SPRT Detector]
-    D --> E[Policy Engine]
-    E --> F{Decision}
-```
-
-1. **Telemetry**: Capture high-fidelity events via `@observe_tool` or `@observe_llm`.
-2. **Semantic Encoding**: Map raw event noise (UUIDs, paths) to a finite alphabet of symbolic states $\Sigma$ (e.g., `SENSITIVE_WRITE`).
-3. **Probabilistic Detection**: A first-order Markov Model estimates the probability of the current transition $P(s_t | s_{t-1})$.
-4. **Statistical Accumulation**: The SPRT accumulates log-likelihood ratios to distinguish between $H_0$ (normal) and $H_1$ (drifted).
-5. **Policy Enforcement**: Maps the statistical result to a mitigation action.
+- **⚡ Lightweight Base Package**: Zero heavyweight ML or server frameworks required for the core SDK, CLI, and policy engine.
+- **🛑 Deterministic Policy Governance**: Strict path canonicalization, command pipeline decomposition, and network metadata/IMDS blocking.
+- **🧠 Semantic Intent Classification**: Evaluates tool calls against declared task scopes with zero-shot semantic classifiers.
+- **📈 Behavioral Markov Modeling**: Models agent state transition sequences ($S_{t-1} \to S_t$) to detect sudden behavioral shifts.
+- **🔬 Statistical Sequential Testing (SPRT)**: Wald's Sequential Probability Ratio Test accumulates log-likelihood ratios to identify subtle multi-event drift without false alarms.
+- **🤝 Multi-Agent Swarm Topology Verification (Phase 17)**: Governs complex agent topologies (`planner` $\to$ `coder` $\to$ `tester` $\to$ `executor`), detecting abnormal handoffs, rogue delegations, and cross-agent privilege escalation.
+- **🏢 Enterprise Architecture & Multi-Tenancy (Phase 18)**: Multi-tenant boundary isolation (`Tenant`, `Organization`, `Project`, `Environment`), hierarchical RBAC, Keycloak/OIDC-compatible auth abstractions, and policy set versioning.
+- **⏸️ Dual-Control Human Approvals**: Pauses high-risk actions (`REVIEW`) and enforces single-use cryptographic challenge tokens to eliminate replay attacks.
+- **🔒 Tamper-Evident Audit Trails**: SHA-256 hash-chained sequential audit logging ($H_i = \text{SHA-256}(\dots \parallel H_{i-1})$) with automated secret redaction for API keys, private keys, and JWTs.
+- **🖥️ SOC Operations Console**: Dark Cyber cockpit with interactive SVG multi-agent DAG visualizer, Wald SPRT phase space workbench, and instant threat simulator presets.
 
 ---
 
-## 🛠️ Quick Start
+## 📦 Installation
 
-### 1. Installation
-Using `uv` (recommended) or `pip`:
+RuntimeVerify provides modular dependency groups so developers only install what they need:
 
+### Base Package (Recommended for Agents & CLI)
+Includes the Python SDK, CLI, Deterministic Policy Engine, Markov behavioral model, SPRT verification, and Security Hardening layer:
 ```bash
-# Using uv
-uv pip install .
-
-# Using pip
-pip install .
+pip install runtimeverify
 ```
 
-### 2. Instrument Your Agent
-Simply wrap your tools and LLM calls with the `runtimeverify` decorators:
+### Optional Extras
+```bash
+# REST API Server & OpenAPI documentation (v1)
+pip install "runtimeverify[api]"
+
+# Web Security Operations Dashboard & static UI
+pip install "runtimeverify[dashboard]"
+
+# Laya Semantic Decision Engine integration
+pip install "runtimeverify[laya]"
+
+# Development, testing, and linting suite
+pip install "runtimeverify[dev]"
+
+# Complete bundle (API + Dashboard + Semantic + Core)
+pip install "runtimeverify[all]"
+```
+
+---
+
+## 🚀 Quickstart
+
+### 1. Initialize Workspace & Configuration
+Initialize local configuration and baseline directories:
+```bash
+runtimeverify init
+```
+This generates `.runtimeverify/config.yaml` with secure default policies, audit sinks, and verification parameters.
+
+---
+
+### 2. Your First Security Policy
+Create a declarative YAML policy in `policies/default.yaml` defining what actions are permitted, held for human review, or blocked:
+
+```yaml
+version: "1.0"
+conflict_resolution: most_restrictive
+policies:
+  # 1. Block access to cloud credentials
+  - id: block-cloud-credentials
+    name: Protect Cloud Credentials
+    description: Prevents reading AWS, SSH, or environment credentials
+    decision: BLOCK
+    severity: CRITICAL
+    match:
+      event_type: filesystem.read
+      path:
+        any_of:
+          - "~/.aws/*"
+          - "~/.ssh/*"
+          - "**/.env*"
+
+  # 2. Block destructive shell operations
+  - id: block-destructive-commands
+    name: Block Destructive Shell
+    description: Prevents destructive deletion commands
+    decision: BLOCK
+    severity: CRITICAL
+    match:
+      event_type: shell.command
+      command:
+        destructive: true
+
+  # 3. Require human approval for production deployments
+  - id: review-production-deploy
+    name: Review Production Deployments
+    description: Pauses external deployment commands for human authorization
+    decision: REVIEW
+    severity: HIGH
+    match:
+      event_type: shell.command
+      command:
+        contains: "kubectl apply"
+```
+
+Validate your policy file using the CLI:
+```bash
+runtimeverify policy validate policies/default.yaml
+```
+
+---
+
+### 3. Your First Monitored Agent
+Integrate RuntimeVerify into your autonomous AI agent with minimal code changes using `runtimeverify.session`:
 
 ```python
-from runtimeverify.telemetry.decorators import observe_tool, observe_llm
+import runtimeverify
+from runtimeverify.interception.exceptions import ExecutionBlockedError
 
-@observe_tool(name="filesystem_write")
-def write_to_disk(path: str, content: str):
-    with open(path, "w") as f:
-        f.write(content)
-    return "Success"
+# Wrap agent execution in a monitored session
+with runtimeverify.session(agent_id="coding-assistant") as session:
 
-@observe_llm(model="claude-3-5-sonnet")
-def get_agent_response(prompt: str):
-    # Your LLM call here
-    return "The user's request was processed."
+    # 1. Safe Action: Reading project code is evaluated and permitted
+    safe_read = {
+        "path": "src/main.py",
+        "operation": "read",
+    }
+    
+    # Dry-run check or direct execution
+    decision = session.check(safe_read)
+    print(f"Read permitted: {decision.execution_permitted}")  # True
+    
+    result = session.execute(safe_read)
+    print(f"Executed: {result.success}")
 
-# Now, every time these are called, telemetry is automatically 
-# captured and sent to the verification engine.
-```
-
-### 3. Train Your Behavioral Baseline
-Collect "golden" traces (JSON/JSONL files) and train your model:
-
-```bash
-# Initialize workspace
-verify init
-
-# Train the Markov model
-verify train ./data/golden_traces/ --output behavior_model.json
-```
-
-### 4. Inspect Your Model
-Verify the learned state transitions and sparsity:
-
-```bash
-verify inspect behavior_model.json
+    # 2. Dangerous Action: Reading credentials triggers deterministic block
+    credential_read = {
+        "path": "~/.aws/credentials",
+        "operation": "read",
+    }
+    
+    try:
+        session.execute(credential_read)
+    except ExecutionBlockedError as e:
+        print(f"\n[BLOCKED] Action intercepted by RuntimeVerify!")
+        print(f"Policy:   {e.policy_id}")
+        print(f"Severity: {e.severity}")
+        print(f"Reason:   {e.reason}")
 ```
 
 ---
 
-## 🧪 Deep Dive: The Math
+### 4. Multi-Agent Swarm Verification (Phase 17)
+Enforce topological delegation rules across coordinated agent fleets (`planner` $\to$ `coder` $\to$ `tester` $\to$ `executor`):
 
-At the heart of `RuntimeVerify` is **Wald's Sequential Probability Ratio Test (SPRT)**. While the standard SPRT is designed for i.i.d. samples, we employ the generalized version for Markov-dependent observations, where the likelihood ratio is computed based on transition probabilities $P(s_t \mid s_{t-1})$. Instead of making a decision based on a single transition, we maintain a cumulative log-likelihood ratio $\Lambda_t$:
+```python
+from runtimeverify.multiagent import (
+    AgentRole,
+    AgentTopology,
+    DelegationPolicy,
+    MultiAgentVerifier,
+)
 
-$$\Lambda_t = \Lambda_{t-1} + \ln \frac{P(s_t \mid s_{t-1}; H_1)}{P(s_t \mid s_{t-1}; H_0)}$$
+# Define legitimate swarm topology
+topology = AgentTopology()
+topology.add_agent("planner", AgentRole.PLANNER)
+topology.add_agent("coder", AgentRole.CODER, parent_id="planner")
+topology.add_agent("tester", AgentRole.TESTER, parent_id="planner")
+topology.add_agent("executor", AgentRole.EXECUTOR, parent_id="tester")
 
-**Decision Boundaries:**
-- $\Lambda_t \ge \ln(\frac{1 - \beta}{\alpha}) \implies$ **Anomaly Detected** (Reject $H_0$)
-- $\Lambda_t \le \ln(\frac{\beta}{1 - \alpha}) \implies$ **Reset Accumulator** (Accept $H_0$)
-- Otherwise $\implies$ **Continue Sampling**
+# Allow coder -> tester handoff, but disallow coder -> executor bypass
+topology.allow_delegation("planner", "coder")
+topology.allow_delegation("coder", "tester")
+topology.allow_delegation("tester", "executor")
 
-This allows the system to ignore transient noise while rapidly identifying systemic behavioral drift.
+verifier = MultiAgentVerifier(topology)
+
+# Legitimate handoff: ALLOW
+decision = verifier.verify_delegation(from_agent="coder", to_agent="tester")
+assert decision.permitted is True
+
+# Rogue privilege bypass: BLOCK
+bypass_decision = verifier.verify_delegation(from_agent="coder", to_agent="executor")
+assert bypass_decision.permitted is False
+print(f"Bypass Intercepted: {bypass_decision.reason}")
+```
 
 ---
 
-## 📦 CLI Reference
+### 5. CLI Dry-Run & Threat Inspection
+Inspect and test actions directly from your terminal using `runtimeverify check`:
 
-The `verify` command provides the following utilities:
+```bash
+# Permitted: Benign git status check
+runtimeverify check --command "git status"
+
+# Blocked: Attempted destructive deletion
+runtimeverify check --command "rm -rf /var/data"
+
+# Blocked: Attempted path traversal to cloud credentials
+runtimeverify check --file "~/.aws/../.aws/credentials"
+
+# Blocked: Attempted SSRF to AWS EC2 Instance Metadata Service
+runtimeverify check --url "http://169.254.169.254/latest/meta-data"
+```
+
+---
+
+## 💻 CLI Commands Overview
 
 | Command | Description | Example |
-| :--- | :--- | :--- |
-| `init` | Initializes a new `.runtimeverify` workspace | `verify init` |
-| `train` | Trains a Markov model from session traces | `verify train ./traces -o model.json` |
-| `inspect` | Analyzes state occupancy and sparsity | `verify inspect model.json` |
-| `explain` | Explains a specific state transition probability | `verify explain READ_SENSITIVE WRITE_FILE` |
-| `doctor` | Runs environment and configuration diagnostics | `verify doctor` |
-| `version` | Prints the current framework version | `verify version` |
+|---|---|---|
+| `runtimeverify init` | Initialize local workspace and `.runtimeverify/config.yaml` | `runtimeverify init` |
+| `runtimeverify check` | Test an action or command against active policies | `runtimeverify check --command "git status"` |
+| `runtimeverify run` | Supervise an agent process under runtime enforcement | `runtimeverify run --policy policy.yaml -- python agent.py` |
+| `runtimeverify monitor` | Stream real-time events and decisions for an agent | `runtimeverify monitor --agent coding-agent` |
+| `runtimeverify policy` | Validate or test policy files | `runtimeverify policy validate policy.yaml` |
+| `runtimeverify approvals` | List, approve, or deny actions held for human review | `runtimeverify approvals list` |
+| `runtimeverify events` | Query structured audit events and correlation trails | `runtimeverify events --limit 20` |
+| `runtimeverify benchmark` | Run security verification benchmarks across threat scenarios | `runtimeverify benchmark --security` |
+| `runtimeverify version` | Display version and build information | `runtimeverify version` |
 
 ---
 
-## 👩‍💻 Extension Guide
+## 🏛️ Verification Hierarchy & Architecture
 
-`RuntimeVerify` is designed for extensibility via Abstract Base Classes (ABCs).
-
-### Implementing a Custom Detector
-To implement a new statistical method (e.g., CUSUM), inherit from `BaseDetector`:
-
-```python
-from runtimeverify.detector.interfaces import BaseDetector
-from runtimeverify.detector import DetectorResult
-
-class MyCustomDetector(BaseDetector):
-    def train(self, trace_sequences):
-        # Implement training logic
-        pass
-
-    def update(self, current_state: str) -> DetectorResult:
-        # Implement statistical test
-        return DetectorResult(deviation_score=0.5, decision="NORMAL", evidence={})
-
-    def reset(self):
-        pass
+```
+                             EVENT DISPATCH
+                                   |
+                                   v
++-------------------------------------------------------------------+
+| LAYER 1: Hard Deterministic Policy Engine                         |
+| - Zero-latency, zero-LLM rule matching                            |
+| - Path canonicalization & traversal rejection                     |
+| - Command pipeline decomposition & dangerous construct scanner    |
+| - SSRF / IMDS / Private IP validation                             |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| LAYER 2: Multi-Agent Swarm Topology Guard (Phase 17)              |
+| - Topological graph validation (DAG invariants)                   |
+| - Delegation & handoff authorization                              |
+| - Cross-agent privilege escalation interception                   |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| LAYER 3: Semantic Decision Engine                                 |
+| - Zero-shot classification & intent compliance                    |
+| - Scope drift & prompt-injection heuristics                       |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| LAYER 4: Behavioral Markov Model                                  |
+| - State transition tracking (S_{t-1} -> S_t)                      |
+| - Transition anomaly detection against historical baselines       |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| LAYER 5: Wald's SPRT (Sequential Probability Ratio Test)          |
+| - Multi-event sequential hypothesis testing                       |
+| - Log-likelihood ratio accumulation & dynamic stopping boundaries |
++---------------------------------+---------------------------------+
+                                  |
+                                  v
++-------------------------------------------------------------------+
+| HYBRID DECISION SYNTHESIS                                         |
+| Priority: BLOCK > REVIEW > ALLOW                                  |
++---------------------------------+---------------------------------+
+              |                   |                   |
+              v                   v                   v
+            ALLOW              REVIEW               BLOCK
+         (Execute)        (Human Signoff)      (Halt & Alert)
 ```
 
 ---
 
-## 📊 Performance Metrics
+## 🖥️ Operations Dashboard (SOC Console)
 
-Optimized for inline runtime guardrails:
-- **Encoding Latency**: $< 0.5\text{ms}$
-- **Detection Overhead**: $\approx 1\text{ms}$ per transition.
-- **Memory Footprint**: $\mathcal{O}(|\Sigma|^2)$ where $|\Sigma|$ is the size of the state alphabet.
+RuntimeVerify includes a production-grade, dark-mode Security Operations Center dashboard built to enterprise design standards:
 
-## 🗺️ Roadmap
-- [ ] **HMM Integration**: Moving beyond first-order Markov chains to Hidden Markov Models.
-- [ ] **OTLP Export**: Native support for OpenTelemetry.
-- [ ] **LTL Policies**: Support for Linear Temporal Logic forbidden sequences.
+```bash
+# Launch the API server and dashboard
+uv run uvicorn runtimeverify.api.app:app --port 8000
+```
+Open **`http://localhost:8000/`** to access:
+- **Topology DAG Canvas**: Interactive SVG representation of the active multi-agent swarm with 1-click bypass attack simulation.
+- **SPRT Phase Space Workbench**: Real-time visualization of Wald decision boundaries ($A=+2.944, B=-2.944$) and dynamic drift step injection.
+- **Enterprise Scope Bar**: Instant tenant, environment (`PROD`/`STAGING`/`DEV`), and RBAC context switching.
+- **Cryptographic Audit Verifier**: 1-click SHA-256 hash-chain verification ensuring 100% untampered block continuity.
+- **Interactive Threat Simulator**: Real-time execution against live backend gating endpoints.
 
 ---
 
-## 🤝 Contributing
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for our guidelines.
+## 📁 Repository Examples
+
+Ready-to-run examples are available in the [`examples/`](examples/) directory:
+
+- [`examples/quickstart_agent.py`](examples/quickstart_agent.py): Autonomous coding agent session with allowed actions and blocked credential access.
+- [`examples/first_policy_demo.py`](examples/first_policy_demo.py): Custom YAML policy loading, rule validation, and policy evaluation.
+- [`examples/human_approval_flow.py`](examples/human_approval_flow.py): Human-in-the-loop approval workflow with single-use challenge token verification and replay defense.
+- [`examples/policies/`](examples/policies/): Production-ready policy templates (`default.yaml`, `developer.yaml`, `strict.yaml`).
+
+---
+
+## 🛡️ Operational Scope & Boundary Declaration
+
+> [!IMPORTANT]
+> RuntimeVerify is an **application-layer runtime verification and interception framework**, not an operating system kernel sandbox (such as Linux namespaces, cgroups, `seccomp`, `bubblewrap`, or `gVisor`).
+>
+> RuntimeVerify validates, gates, and audits agent tool calls before dispatch. For untrusted, hostile, or multi-tenant agent execution, RuntimeVerify should be deployed *inside* an isolated container or microVM runtime.
+
+For detailed security specifications, see:
+- [**Threat Model**](docs/security/threat-model.md): Comprehensive analysis across 13 threat vectors.
+- [**Security Model**](docs/security/security-model.md): Defense-in-depth architecture, guarantees, and non-goals.
+- [**Enterprise Architecture**](docs/architecture/enterprise-architecture.md): Tenant isolation, RBAC, and OIDC/Keycloak models.
+- [**Production Readiness Review**](docs/release/production-readiness.md): Production readiness audit across 16 dimensions.
+- [**Vulnerability Reporting Policy**](SECURITY.md): Responsible disclosure channels and SLAs.
+
+---
+
+## 🛠️ Development, Testing & Releases
+
+We welcome contributions! Please review our development guidelines before opening a pull request:
+
+- [**Contributing Guide**](CONTRIBUTING.md): Environment setup, PR quality gates, coding standards, and test integrity rules.
+- [**Release Procedures**](docs/release.md): SemVer release workflows, PyPI Trusted Publishing, SHA-256 artifact verification, and rollback procedures.
+
+### Local Quality Verification
+
+```bash
+# Code style and formatting
+uv run ruff format --check src/ tests/ examples/
+uv run ruff check src/ tests/ examples/
+
+# Type checking
+uv run mypy src/
+
+# Test suite (all 413 unit, integration, and security tests)
+uv run pytest --cov=runtimeverify tests/
+
+# Dependency security audit
+uv run pip-audit
+```
+
+---
 
 ## 📜 License
-Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
+
+RuntimeVerify is licensed under the [MIT License](LICENSE).
+Copyright (c) 2026 Google DeepMind Agentic Coding Team.

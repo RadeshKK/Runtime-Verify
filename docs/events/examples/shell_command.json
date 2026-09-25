@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "event_id": "b3c4d5e6-f1a2-4b3c-9d4e-5f6a1b2c3d4e",
+  "timestamp": "2026-09-25T12:00:08Z",
+  "session_id": "session_coder_90210",
+  "trace_id": "trace_998877665544",
+  "span_id": "span_66778899",
+  "parent_event_id": null,
+  "agent_id": "code_architect_agent",
+  "agent_type": "coder",
+  "event_type": "shell.command",
+  "action": "execute",
+  "target": "pytest",
+  "source": "agent",
+  "environment": "production",
+  "context": {
+    "current_directory": "/workspace/Runtime-Verify",
+    "user": "developer",
+    "hostname": "agent-worker-01",
+    "platform": "linux",
+    "process_id": 5120
+  },
+  "metadata": {},
+  "payload": {
+    "command": "uv run pytest --cov=runtimeverify",
+    "arguments": [
+      "pytest",
+      "--cov=runtimeverify"
+    ],
+    "working_directory": "/workspace/Runtime-Verify",
+    "exit_code": 0,
+    "output": "87 passed in 2.12s",
+    "duration_ms": 2120.0
+  }
+}

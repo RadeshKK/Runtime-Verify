@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "event_id": "a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d",
+  "timestamp": "2026-09-25T12:00:00Z",
+  "session_id": "session_coder_90210",
+  "trace_id": "trace_998877665544",
+  "span_id": "span_11223344",
+  "parent_event_id": null,
+  "agent_id": "code_architect_agent",
+  "agent_type": "coder",
+  "event_type": "llm.request",
+  "action": "request",
+  "target": "claude-3-5-sonnet",
+  "source": "agent",
+  "environment": "production",
+  "context": {
+    "current_directory": "/workspace/Runtime-Verify",
+    "user": "developer",
+    "hostname": "agent-worker-01",
+    "platform": "linux",
+    "process_id": 4120,
+    "thread_id": "async-worker-2",
+    "git_branch": "main",
+    "git_commit": "723d4c3",
+    "tags": {
+      "service": "verification-pipeline",
+      "model_family": "claude"
+    }
+  },
+  "metadata": {
+    "prompt_tokens_estimated": 350
+  },
+  "payload": {
+    "model": "claude-3-5-sonnet",
+    "prompt": "Design a canonical event schema for autonomous AI agents.",
+    "temperature": 0.2,
+    "max_tokens": 4096,
+    "tools_provided": [
+      "read_file",
+      "write_file",
+      "bash"
+    ]
+  }
+}

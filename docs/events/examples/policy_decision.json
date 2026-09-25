@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "event_id": "c5d6e7f1-a2b3-4c5d-8e6f-7a1b2c3d4e5f",
+  "timestamp": "2026-09-25T12:00:15Z",
+  "session_id": "session_coder_90210",
+  "trace_id": "trace_998877665544",
+  "span_id": "span_33445522",
+  "parent_event_id": null,
+  "agent_id": "runtime_policy_verifier",
+  "agent_type": "critic",
+  "event_type": "policy.decision",
+  "action": "block",
+  "target": "sensitive_directory_write_policy",
+  "source": "verifier",
+  "environment": "production",
+  "context": {
+    "current_directory": "/workspace/Runtime-Verify",
+    "user": "developer",
+    "hostname": "agent-worker-01",
+    "platform": "linux"
+  },
+  "metadata": {},
+  "payload": {
+    "policy_name": "sensitive_directory_write_policy",
+    "decision": "BLOCK",
+    "deviation_score": 14.82,
+    "triggered_rules": [
+      "path_deny_list:etc",
+      "sprt_anomaly_detected"
+    ],
+    "evidence": {
+      "target_file": "/etc/shadow",
+      "prev_state": "READ_SOURCE",
+      "curr_state": "WRITE_SENSITIVE",
+      "sprt_llr": 14.82,
+      "sprt_upper_threshold": 4.59
+    }
+  }
+}

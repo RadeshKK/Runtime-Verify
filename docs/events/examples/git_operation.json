@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "event_id": "d5e6f1a2-b3c4-4d5e-9f6a-1b2c3d4e5f6a",
+  "timestamp": "2026-09-25T12:00:10Z",
+  "session_id": "session_coder_90210",
+  "trace_id": "trace_998877665544",
+  "span_id": "span_88990011",
+  "parent_event_id": null,
+  "agent_id": "code_architect_agent",
+  "agent_type": "coder",
+  "event_type": "git.operation",
+  "action": "commit",
+  "target": "Runtime-Verify",
+  "source": "agent",
+  "environment": "production",
+  "context": {
+    "current_directory": "/workspace/Runtime-Verify",
+    "user": "developer",
+    "hostname": "agent-worker-01",
+    "platform": "linux",
+    "git_branch": "feature/canonical-events"
+  },
+  "metadata": {},
+  "payload": {
+    "operation": "commit",
+    "repository": "Runtime-Verify",
+    "branch": "feature/canonical-events",
+    "commit_hash": "f4e2a1c0d",
+    "message": "feat(events): implement canonical runtime event schema",
+    "files_changed": [
+      "src/runtimeverify/events/canonical.py",
+      "src/runtimeverify/events/enums.py",
+      "src/runtimeverify/events/context.py"
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "event_id": "f6a1b2c3-d4e5-4f6a-b2c3-d4e5f6a1b2c3",
+  "timestamp": "2026-09-25T12:00:06Z",
+  "session_id": "session_coder_90210",
+  "trace_id": "trace_998877665544",
+  "span_id": "span_44556677",
+  "parent_event_id": null,
+  "agent_id": "code_architect_agent",
+  "agent_type": "coder",
+  "event_type": "filesystem.write",
+  "action": "write",
+  "target": "/workspace/Runtime-Verify/src/runtimeverify/events/canonical.py",
+  "source": "agent",
+  "environment": "production",
+  "context": {
+    "current_directory": "/workspace/Runtime-Verify",
+    "user": "developer",
+    "hostname": "agent-worker-01",
+    "platform": "linux"
+  },
+  "metadata": {},
+  "payload": {
+    "path": "/workspace/Runtime-Verify/src/runtimeverify/events/canonical.py",
+    "bytes_written": 1420,
+    "content_hash": "sha256_3b1a8d05e2...",
+    "status": "success"
+  }
+}

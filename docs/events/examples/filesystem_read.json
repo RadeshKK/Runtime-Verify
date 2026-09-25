@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "event_id": "e5f6a1b2-c3d4-4e5f-a1b2-c3d4e5f6a1b2",
+  "timestamp": "2026-09-25T12:00:05Z",
+  "session_id": "session_coder_90210",
+  "trace_id": "trace_998877665544",
+  "span_id": "span_33445566",
+  "parent_event_id": null,
+  "agent_id": "code_architect_agent",
+  "agent_type": "coder",
+  "event_type": "filesystem.read",
+  "action": "read",
+  "target": "/workspace/Runtime-Verify/pyproject.toml",
+  "source": "agent",
+  "environment": "production",
+  "context": {
+    "current_directory": "/workspace/Runtime-Verify",
+    "user": "developer",
+    "hostname": "agent-worker-01",
+    "platform": "linux"
+  },
+  "metadata": {},
+  "payload": {
+    "path": "/workspace/Runtime-Verify/pyproject.toml",
+    "bytes_read": 670,
+    "status": "success"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "event_id": "f1a2b3c4-d5e6-4f1a-b2c3-d4e5f6a1b2c3",
+  "timestamp": "2026-09-25T12:00:12Z",
+  "session_id": "session_coder_90210",
+  "trace_id": "trace_998877665544",
+  "span_id": "span_00112233",
+  "parent_event_id": null,
+  "agent_id": "code_architect_agent",
+  "agent_type": "coder",
+  "event_type": "process.creation",
+  "action": "spawn",
+  "target": "python",
+  "source": "agent",
+  "environment": "production",
+  "context": {
+    "current_directory": "/workspace/Runtime-Verify",
+    "user": "developer",
+    "hostname": "agent-worker-01",
+    "platform": "linux",
+    "process_id": 4120
+  },
+  "metadata": {},
+  "payload": {
+    "command": "python -m http.server 8080",
+    "pid": 6012,
+    "parent_pid": 4120,
+    "environment_variables": [
+      "PATH",
+      "PYTHONPATH",
+      "VIRTUAL_ENV"
+    ]
+  }
+}
