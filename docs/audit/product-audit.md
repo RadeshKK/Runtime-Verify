@@ -373,7 +373,7 @@ name = "runtimeverify"
 version = "0.1.0"
 requires-python = ">=3.10"
 authors = [
-    { name = "Google DeepMind Agentic Coding Team", email = "runtimeverify@deepmind.google.com" }
+    { name = "RuntimeVerify Contributors", email = "maintainers@runtimeverify.dev" }
 ]
 maintainers = [
     { name = "RuntimeVerify Maintainers", email = "security@runtimeverify.dev" }
@@ -381,8 +381,8 @@ maintainers = [
 ```
 
 ### Critical Packaging Defects
-1. **Attribution & Brand Inconsistency**:
-   Author is listed as `"Google DeepMind Agentic Coding Team" <runtimeverify@deepmind.google.com>`, yet the GitHub repository belongs to user `RadeshKK` (`https://github.com/RadeshKK/Runtime-Verify`). This presents potential trademark and authenticity concerns on PyPI unless officially licensed by Google DeepMind.
+1. **Attribution & Brand Inconsistency (Resolved)**:
+   Author metadata was previously set to an upstream placeholder rather than `RuntimeVerify Contributors` / `maintainers@runtimeverify.dev`. This has been resolved and aligned with the GitHub repository (`https://github.com/RadeshKK/Runtime-Verify`).
 2. **Unused Heavy Dependency (`scipy`)**:
    `scipy>=1.10.0` is declared as a core dependency. Grepping `src/` and `tests/` reveals **zero imports of scipy**. Including a ~35MB C-extension wheel that is never imported severely harms installation footprint.
 3. **Missing Package Data for Default Policies**:

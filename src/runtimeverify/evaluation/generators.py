@@ -41,7 +41,7 @@ class TraceGenerator:
         return [
             Event(session_id=session_id, agent_id=agent_id, type="agent_start"),
             NetworkEvent(
-                session_id=session_id, agent_id=agent_id, action="request", url="https://google.com/search?q=agents"
+                session_id=session_id, agent_id=agent_id, action="request", url="https://example.com/search?q=agents"
             ),
             LLMEvent(
                 session_id=session_id,

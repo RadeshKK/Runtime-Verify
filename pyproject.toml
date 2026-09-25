@@ -10,7 +10,7 @@ readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [
-    { name = "Google DeepMind Agentic Coding Team", email = "runtimeverify@deepmind.google.com" }
+    { name = "RuntimeVerify Contributors", email = "maintainers@runtimeverify.dev" }
 ]
 maintainers = [
     { name = "RuntimeVerify Maintainers", email = "security@runtimeverify.dev" }

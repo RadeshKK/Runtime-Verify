@@ -364,4 +364,4 @@ uv run pip-audit
 ## 📜 License
 
 RuntimeVerify is licensed under the [MIT License](LICENSE).
-Copyright (c) 2026 Google DeepMind Agentic Coding Team.
+Copyright (c) 2026 RuntimeVerify Contributors.

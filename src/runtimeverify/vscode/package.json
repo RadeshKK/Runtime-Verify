@@ -3,7 +3,7 @@
   "displayName": "verify | AI Agent Runtime Verification",
   "description": "Real-time safety and alignment monitoring for AI agents using statistical Sequential Probability Ratio Tests (SPRT).",
   "version": "0.1.0",
-  "publisher": "google-deepmind",
+  "publisher": "runtimeverify",
   "engines": {
     "vscode": "^1.85.0"
   },

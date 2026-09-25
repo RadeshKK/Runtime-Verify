@@ -310,10 +310,10 @@ Any future architectural enhancements must maintain strict backward compatibilit
    - Missing author, maintainer, repository URL, project URLs, and license metadata.
    - `requires-python = ">=3.14"` needlessly locks out enterprise Python versions (3.10, 3.11, 3.12, 3.13).
 2. **`CITATION.cff`**:
-   - Lists `url: "https://github.com/google-deepmind/runtime-verify"` instead of the actual repository `https://github.com/RadeshKK/Runtime-Verify`.
-   - Authors listed as `"DeepMind Agentic Coding Team"` from upstream template.
+   - Updated repository URL to `https://github.com/RadeshKK/Runtime-Verify`.
+   - Updated authors to `RuntimeVerify Contributors`.
 3. **`SECURITY.md`**:
-   - Points security vulnerability submissions to `agent-security@google.com`.
+   - Security vulnerability submissions routed directly to `security@runtimeverify.dev`.
 4. **`README.md`**:
    - Build status badge link is empty (`()`).
 5. **`docs/` Documentation Files**:
