@@ -2232,7 +2232,7 @@ def replay(
     trace_file: str = typer.Argument(..., help="Path to recorded agent trace file (.json, .jsonl)"),
     policy_path: str = typer.Option("examples/policies/default.yaml", "--policy", "-p", help="Policy YAML file path"),
     compare_policy: Optional[str] = typer.Option(
-        None, "--compare-policy", "--diff", help="Optional candidate policy YAML to evaluate what-if impact"
+        None, "--compare-policy", "--compare", "--diff", help="Optional candidate policy YAML to evaluate what-if impact"
     ),
     strategy: str = typer.Option(
         "hybrid", "--strategy", "-s", help="Verification strategy: hybrid, rules, semantic, markov, rules_markov"

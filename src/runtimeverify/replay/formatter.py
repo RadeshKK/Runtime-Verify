@@ -3,6 +3,7 @@ Rich terminal formatting, JSON serialization, and Markdown report generation
 for the RuntimeVerify Attack / Agent Replay Engine.
 """
 
+from pathlib import Path
 from typing import Any, Dict, Optional
 from rich.console import Console
 from rich.panel import Panel
@@ -18,6 +19,67 @@ class ReplayFormatter:
     """
 
     @classmethod
+    def render_experiment_summary(cls, report: ReplayReport, console: Console) -> None:
+        """
+        Renders the standardized RuntimeVerify Versioned Security Experiment summary block.
+        """
+        trace_name = Path(report.trace_source).stem if report.trace_source else report.session_id
+        events_count = report.summary.total_steps or len(report.steps)
+
+        def print_line(msg: str = "") -> None:
+            try:
+                enc = getattr(console.file, "encoding", None) or "utf-8"
+                msg.encode(enc)
+                console.print(msg)
+            except Exception:
+                fallback = (
+                    msg.replace("\u2500", "-")
+                    .replace("\u2192", "->")
+                    .replace("—", "-")
+                )
+                console.print(fallback)
+
+        print_line("[bold white]RuntimeVerify Replay[/bold white]")
+        print_line("────────────────────────────────────────")
+        print_line()
+        print_line(f"Trace: {trace_name}")
+        print_line(f"Events: {events_count}")
+        print_line()
+
+        if report.comparison:
+            comp = report.comparison
+            b_det = f"event {comp.baseline_detection_step}" if comp.baseline_detection_step is not None else "none"
+            c_det = f"event {comp.candidate_detection_step}" if comp.candidate_detection_step is not None else "none"
+
+            print_line(f"Policy: {comp.baseline_policy_label}")
+            print_line(f"Decision: {comp.baseline_decision}")
+            print_line(f"Detection: {b_det}")
+            print_line()
+            print_line(f"Policy: {comp.candidate_policy_label}")
+            print_line(f"Decision: {comp.candidate_decision}")
+            print_line(f"Detection: {c_det}")
+            print_line()
+            print_line("Behavioral drift:")
+            print_line(f"    {comp.baseline_policy_label} → {comp.baseline_behavioral_drift:.2f}")
+            print_line(f"    {comp.candidate_policy_label} → {comp.candidate_behavioral_drift:.2f}")
+            print_line()
+            print_line("Semantic risk:")
+            print_line(f"    {comp.semantic_risk:.2f}")
+        else:
+            s = report.summary
+            det = f"event {s.first_intervention_step}" if s.first_intervention_step is not None else "none"
+            print_line(f"Policy: {s.policy_label}")
+            print_line(f"Decision: {s.overall_verdict}")
+            print_line(f"Detection: {det}")
+            print_line()
+            print_line("Behavioral drift:")
+            print_line(f"    {s.behavioral_drift:.2f}")
+            print_line()
+            print_line("Semantic risk:")
+            print_line(f"    {s.semantic_risk:.2f}")
+        print_line()
+
+    @classmethod
     def render_terminal(
         cls,
         report: ReplayReport,
@@ -26,6 +88,9 @@ class ReplayFormatter:
         only_interventions: bool = False,
     ) -> None:
         """Prints a comprehensive rich terminal visual representation of the replay report."""
+
+        # 0. Versioned Experiment Summary Card
+        cls.render_experiment_summary(report, console)
 
         # 1. Header Panel
         strat_badge = f"[bold cyan]{report.strategy.upper()}[/bold cyan]"

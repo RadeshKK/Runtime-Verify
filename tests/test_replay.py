@@ -244,3 +244,48 @@ class TestReplayFormatter:
         # Must execute cleanly without exception
         ReplayFormatter.render_terminal(report, console=console, verbose=True, only_interventions=False)
         ReplayFormatter.render_terminal(report, console=console, verbose=False, only_interventions=True)
+
+
+class TestVersionedSecurityExperiments:
+    """Verifies Phase 24 versioned security experiments and comparative policy analysis."""
+
+    def test_versioned_policy_v1_detection(self, traces_dir: Path, policies_dir: Path):
+        replayer = AgentTraceReplayer(policy_path=str(policies_dir / "policy-v1.yaml"))
+        report = replayer.replay(traces_dir / "credential-exfiltration-001.json")
+
+        assert report.summary.total_steps == 17
+        assert report.summary.overall_verdict == "BLOCK"
+        assert report.summary.first_intervention_step == 11
+        assert report.summary.policy_label == "v1"
+        assert report.summary.behavioral_drift == 0.82
+        assert report.summary.semantic_risk == 0.94
+
+    def test_versioned_policy_v2_detection(self, traces_dir: Path, policies_dir: Path):
+        replayer = AgentTraceReplayer(policy_path=str(policies_dir / "policy-v2.yaml"))
+        report = replayer.replay(traces_dir / "credential-exfiltration-001.json")
+
+        assert report.summary.total_steps == 17
+        assert report.summary.overall_verdict == "BLOCK"
+        assert report.summary.first_intervention_step == 8
+        assert report.summary.policy_label == "v2"
+        assert report.summary.behavioral_drift == 0.91
+        assert report.summary.semantic_risk == 0.94
+
+    def test_versioned_policy_comparison(self, traces_dir: Path, policies_dir: Path):
+        replayer = AgentTraceReplayer(
+            policy_path=str(policies_dir / "policy-v1.yaml"),
+            compare_policy_path=str(policies_dir / "policy-v2.yaml"),
+        )
+        report = replayer.replay(traces_dir / "credential-exfiltration-001.json")
+
+        assert report.comparison is not None
+        comp = report.comparison
+        assert comp.baseline_policy_label == "v1"
+        assert comp.candidate_policy_label == "v2"
+        assert comp.baseline_detection_step == 11
+        assert comp.candidate_detection_step == 8
+        assert comp.baseline_behavioral_drift == 0.82
+        assert comp.candidate_behavioral_drift == 0.91
+        assert comp.semantic_risk == 0.94
+        assert "Attack detected 3 step(s) earlier" in comp.delta_description
+

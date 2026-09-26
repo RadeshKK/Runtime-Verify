@@ -102,3 +102,73 @@ def test_cli_replay_only_interventions():
     )
     assert result.exit_code == 2
     assert "Step-by-Step Replay Trace" in result.stdout
+
+
+def test_cli_replay_versioned_policy_v1():
+    result = runner.invoke(
+        app,
+        [
+            "replay",
+            "examples/traces/credential-exfiltration-001.json",
+            "--policy",
+            "examples/policies/policy-v1.yaml",
+        ],
+    )
+    assert result.exit_code == 2
+    assert "Trace: credential-exfiltration-001" in result.stdout
+    assert "Events: 17" in result.stdout
+    assert "Policy: v1" in result.stdout
+    assert "Decision: BLOCK" in result.stdout
+    assert "Detection: event 11" in result.stdout
+    assert "Behavioral drift:" in result.stdout
+    assert "0.82" in result.stdout
+    assert "Semantic risk:" in result.stdout
+    assert "0.94" in result.stdout
+
+
+def test_cli_replay_versioned_policy_v2():
+    result = runner.invoke(
+        app,
+        [
+            "replay",
+            "examples/traces/credential-exfiltration-001.json",
+            "--policy",
+            "examples/policies/policy-v2.yaml",
+        ],
+    )
+    assert result.exit_code == 2
+    assert "Trace: credential-exfiltration-001" in result.stdout
+    assert "Events: 17" in result.stdout
+    assert "Policy: v2" in result.stdout
+    assert "Decision: BLOCK" in result.stdout
+    assert "Detection: event 8" in result.stdout
+    assert "Behavioral drift:" in result.stdout
+    assert "0.91" in result.stdout
+    assert "Semantic risk:" in result.stdout
+    assert "0.94" in result.stdout
+
+
+def test_cli_replay_versioned_comparison_v1_vs_v2():
+    result = runner.invoke(
+        app,
+        [
+            "replay",
+            "examples/traces/credential-exfiltration-001.json",
+            "--policy",
+            "examples/policies/policy-v1.yaml",
+            "--compare",
+            "examples/policies/policy-v2.yaml",
+        ],
+    )
+    assert result.exit_code == 2
+    assert "Trace: credential-exfiltration-001" in result.stdout
+    assert "Events: 17" in result.stdout
+    assert "Policy: v1" in result.stdout
+    assert "Detection: event 11" in result.stdout
+    assert "Policy: v2" in result.stdout
+    assert "Detection: event 8" in result.stdout
+    assert "0.82" in result.stdout
+    assert "0.91" in result.stdout
+    assert "Semantic risk:" in result.stdout
+    assert "0.94" in result.stdout
+

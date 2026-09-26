@@ -73,6 +73,10 @@ class ReplaySummary(BaseModel):
     semantic_flags_count: int = Field(0, description="Number of times Laya semantic classifier raised risk flags")
     sprt_anomalies_count: int = Field(0, description="Number of times Markov/SPRT flagged anomalous behavioral drift")
 
+    policy_label: str = Field("default", description="Canonical policy label or version (e.g. v1, v2)")
+    behavioral_drift: float = Field(0.0, description="Calculated behavioral anomaly drift score [0.0 - 1.0]")
+    semantic_risk: float = Field(0.0, description="Peak semantic risk classification score [0.0 - 1.0]")
+
     avg_latency_ms: float = Field(0.0, description="Mean step verification latency in milliseconds")
     max_latency_ms: float = Field(0.0, description="Peak step verification latency in milliseconds")
     total_duration_ms: float = Field(0.0, description="Total elapsed wall-clock replay time in milliseconds")
@@ -81,11 +85,20 @@ class ReplaySummary(BaseModel):
 class PolicyComparisonSummary(BaseModel):
     """
     Comparative analysis between a baseline policy and an alternate/candidate policy
-    answering: 'What happens if I change the policy?'
+    answering: 'What happens if I change the policy?' across versioned security experiments.
     """
 
     baseline_policy: str = Field(..., description="Name or path of the baseline policy")
     candidate_policy: str = Field(..., description="Name or path of the candidate policy")
+    baseline_policy_label: str = Field("v1", description="Baseline policy label (e.g. v1)")
+    candidate_policy_label: str = Field("v2", description="Candidate policy label (e.g. v2)")
+    baseline_decision: str = Field("ALLOW", description="Overall baseline decision: ALLOW, REVIEW, or BLOCK")
+    candidate_decision: str = Field("ALLOW", description="Overall candidate decision: ALLOW, REVIEW, or BLOCK")
+    baseline_detection_step: Optional[int] = Field(None, description="First detection event index under baseline policy")
+    candidate_detection_step: Optional[int] = Field(None, description="First detection event index under candidate policy")
+    baseline_behavioral_drift: float = Field(0.0, description="Behavioral drift under baseline policy")
+    candidate_behavioral_drift: float = Field(0.0, description="Behavioral drift under candidate policy")
+    semantic_risk: float = Field(0.0, description="Peak semantic risk classification score")
     divergent_steps: int = Field(0, description="Number of steps where verdicts differed")
     baseline_blocks: int = Field(0, description="Steps blocked under baseline")
     candidate_blocks: int = Field(0, description="Steps blocked under candidate policy")

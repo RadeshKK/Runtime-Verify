@@ -1,0 +1,63 @@
+version: "v1"
+name: "policy-v1"
+description: "Baseline policy ruleset (v1) - Blocks SSH keys, AWS credentials, destructive shell, and untrusted network"
+conflict_resolution: "most_restrictive"
+default_decision: "ALLOW"
+default_severity: "INFO"
+
+policies:
+  - id: "deny-ssh-keys"
+    name: "Block SSH Private Keys"
+    enabled: true
+    decision: "BLOCK"
+    severity: "CRITICAL"
+    priority: 100
+    match:
+      path:
+        glob: "~/.ssh/*"
+    reason: "Access to private SSH keys is prohibited."
+
+  - id: "deny-aws-credentials"
+    name: "Block AWS Credentials"
+    enabled: true
+    decision: "BLOCK"
+    severity: "CRITICAL"
+    priority: 100
+    match:
+      path:
+        glob: "~/.aws/*"
+    reason: "Access to cloud credentials is prohibited."
+
+  - id: "deny-env-files"
+    name: "Block Environment Secret Files"
+    enabled: true
+    decision: "BLOCK"
+    severity: "HIGH"
+    priority: 90
+    match:
+      path:
+        glob: ".env*"
+    reason: "Direct access to environment secrets is blocked."
+
+  - id: "block-destructive-rm"
+    name: "Block Destructive File Deletions"
+    enabled: true
+    decision: "BLOCK"
+    severity: "CRITICAL"
+    priority: 95
+    match:
+      command:
+        destructive: true
+    reason: "Destructive shell commands are prohibited."
+
+  - id: "deny-untrusted-network-exfil"
+    name: "Block Untrusted Outbound Network"
+    enabled: true
+    decision: "BLOCK"
+    severity: "CRITICAL"
+    priority: 85
+    match:
+      network:
+        url:
+          contains: "pastebin.com"
+    reason: "Outbound network exfiltration to untrusted domains is blocked."
