@@ -22,7 +22,7 @@ class ReplayStep(BaseModel):
     name: str = Field(..., description="Action verb/operation (e.g. read, write, execute, connect)")
     target: str = Field(..., description="Target resource (command, path, URL, branch)")
     params: Dict[str, Any] = Field(default_factory=dict, description="Raw action parameters")
-    
+
     # Layer 1: Deterministic Policy
     policy_verdict: str = Field("ALLOW", description="ALLOW, REVIEW, or BLOCK from policy engine")
     policy_id: Optional[str] = Field(None, description="ID of triggered policy rule if any")
@@ -51,7 +51,9 @@ class ReplayStep(BaseModel):
     # What-If Policy Comparison (optional)
     comparison_verdict: Optional[str] = Field(None, description="Alternate policy verdict for what-if evaluation")
     comparison_reason: Optional[str] = Field(None, description="Alternate policy rationale")
-    verdict_diverged: bool = Field(False, description="True if baseline and comparison policies reached different decisions")
+    verdict_diverged: bool = Field(
+        False, description="True if baseline and comparison policies reached different decisions"
+    )
 
 
 class ReplaySummary(BaseModel):
@@ -63,10 +65,14 @@ class ReplaySummary(BaseModel):
     allowed_steps: int = Field(0, description="Count of steps evaluated as ALLOW")
     reviewed_steps: int = Field(0, description="Count of steps requiring human REVIEW")
     blocked_steps: int = Field(0, description="Count of steps actively BLOCKED")
-    
-    overall_verdict: str = Field("ALLOW", description="Overall session verdict (BLOCK if any blocked, else REVIEW if any reviewed, else ALLOW)")
+
+    overall_verdict: str = Field(
+        "ALLOW", description="Overall session verdict (BLOCK if any blocked, else REVIEW if any reviewed, else ALLOW)"
+    )
     first_intervention_step: Optional[int] = Field(None, description="Step number of the first non-ALLOW verdict")
-    first_intervention_layer: Optional[str] = Field(None, description="Security layer responsible for the first intervention (Policy, Laya, Markov, SPRT)")
+    first_intervention_layer: Optional[str] = Field(
+        None, description="Security layer responsible for the first intervention (Policy, Laya, Markov, SPRT)"
+    )
     first_intervention_reason: Optional[str] = Field(None, description="Rationale behind the first intervention")
 
     policy_triggers_count: int = Field(0, description="Number of times deterministic policies triggered")
@@ -94,8 +100,12 @@ class PolicyComparisonSummary(BaseModel):
     candidate_policy_label: str = Field("v2", description="Candidate policy label (e.g. v2)")
     baseline_decision: str = Field("ALLOW", description="Overall baseline decision: ALLOW, REVIEW, or BLOCK")
     candidate_decision: str = Field("ALLOW", description="Overall candidate decision: ALLOW, REVIEW, or BLOCK")
-    baseline_detection_step: Optional[int] = Field(None, description="First detection event index under baseline policy")
-    candidate_detection_step: Optional[int] = Field(None, description="First detection event index under candidate policy")
+    baseline_detection_step: Optional[int] = Field(
+        None, description="First detection event index under baseline policy"
+    )
+    candidate_detection_step: Optional[int] = Field(
+        None, description="First detection event index under candidate policy"
+    )
     baseline_behavioral_drift: float = Field(0.0, description="Behavioral drift under baseline policy")
     candidate_behavioral_drift: float = Field(0.0, description="Behavioral drift under candidate policy")
     semantic_risk: float = Field(0.0, description="Peak semantic risk classification score")
@@ -115,9 +125,13 @@ class ReplayReport(BaseModel):
     trace_source: str = Field(..., description="Path or origin of the replayed agent trace")
     session_id: str = Field("default-session", description="Target session identifier")
     agent_id: str = Field("default-agent", description="Target agent identifier")
-    strategy: str = Field("hybrid", description="Verification strategy applied (hybrid, rules, semantic, markov, rules_markov)")
+    strategy: str = Field(
+        "hybrid", description="Verification strategy applied (hybrid, rules, semantic, markov, rules_markov)"
+    )
     policy_path: str = Field(..., description="Active baseline policy path")
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="UTC execution timestamp")
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), description="UTC execution timestamp"
+    )
     steps: List[ReplayStep] = Field(default_factory=list, description="Ordered step-by-step verification results")
     summary: ReplaySummary = Field(default_factory=ReplaySummary, description="Aggregated session metrics")
     comparison: Optional[PolicyComparisonSummary] = Field(None, description="What-if policy comparison if requested")

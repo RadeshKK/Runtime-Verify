@@ -4,17 +4,13 @@ Coordinates multi-layer verification (Policy, Laya, Markov/SPRT),
 synthesizes ALLOW/REVIEW/BLOCK decisions, and performs what-if policy comparisons.
 """
 
-from datetime import datetime, timezone
 import logging
 from pathlib import Path
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
-from runtimeverify.events.base import Event
-from runtimeverify.interception.models import Action
 from runtimeverify.policy.evaluator import PolicyEvaluator
 from runtimeverify.policy.loader import load_policy_from_yaml
-from runtimeverify.policy.models import PolicySet
 from runtimeverify.replay.loader import TraceLoader
 from runtimeverify.replay.models import (
     PolicyComparisonSummary,
@@ -73,7 +69,9 @@ class AgentTraceReplayer:
                 pset = load_policy_from_yaml(self.policy_path)
                 self.policy_evaluator = PolicyEvaluator(policy_set=pset)
             except Exception as e:
-                logger.warning("Could not load policy from %s (%s). Using default empty evaluator.", self.policy_path, e)
+                logger.warning(
+                    "Could not load policy from %s (%s). Using default empty evaluator.", self.policy_path, e
+                )
                 self.policy_evaluator = PolicyEvaluator()
 
         # 2. Resolve Candidate Comparison Policy (What-If Analysis)
@@ -327,7 +325,9 @@ class AgentTraceReplayer:
             replay_step = ReplayStep(
                 step_number=idx,
                 timestamp=action.timestamp,
-                action_type=action.action_type.value if hasattr(action.action_type, "value") else str(action.action_type),
+                action_type=action.action_type.value
+                if hasattr(action.action_type, "value")
+                else str(action.action_type),
                 name=action.name,
                 target=action.target,
                 params=action.params,
@@ -368,7 +368,11 @@ class AgentTraceReplayer:
             overall_verdict = "ALLOW"
 
         base_label = self._extract_policy_label(self.policy_path, self.policy_evaluator)
-        cand_label = self._extract_policy_label(self.compare_policy_path, self.compare_policy_evaluator) if self.compare_policy_path else "v2"
+        cand_label = (
+            self._extract_policy_label(self.compare_policy_path, self.compare_policy_evaluator)
+            if self.compare_policy_path
+            else "v2"
+        )
 
         # Effective detection steps
         det_baseline = first_policy_detection_baseline or first_intervention_step
@@ -403,7 +407,11 @@ class AgentTraceReplayer:
 
         comparison_summary: Optional[PolicyComparisonSummary] = None
         if self.compare_engine is not None and self.compare_policy_path is not None:
-            cand_decision = "BLOCK" if candidate_blocks > 0 else ("REVIEW" if (first_intervention_candidate is not None) else "ALLOW")
+            cand_decision = (
+                "BLOCK"
+                if candidate_blocks > 0
+                else ("REVIEW" if (first_intervention_candidate is not None) else "ALLOW")
+            )
             delta_desc = ""
             if divergent_steps_count == 0:
                 delta_desc = "Candidate policy produced identical decisions across all steps."
@@ -414,12 +422,16 @@ class AgentTraceReplayer:
                 elif delta_blocks < 0:
                     delta_desc = f"Candidate policy loosened constraints: {abs(delta_blocks)} action(s) permitted."
                 else:
-                    delta_desc = f"Decisions shifted across {divergent_steps_count} steps without changing total block count."
+                    delta_desc = (
+                        f"Decisions shifted across {divergent_steps_count} steps without changing total block count."
+                    )
 
                 if det_candidate and det_baseline:
                     if det_candidate < det_baseline:
                         step_diff = det_baseline - det_candidate
-                        delta_desc += f" Attack detected {step_diff} step(s) earlier (step {det_candidate} vs {det_baseline})."
+                        delta_desc += (
+                            f" Attack detected {step_diff} step(s) earlier (step {det_candidate} vs {det_baseline})."
+                        )
 
             comparison_summary = PolicyComparisonSummary(
                 baseline_policy=self.policy_path,
@@ -526,6 +538,7 @@ class AgentTraceReplayer:
     ) -> str:
         """Extracts a concise version/label identifier (e.g. 'v1', 'v2') for policy reporting."""
         import re
+
         if policy_path:
             p_name = Path(policy_path).name.lower()
             m = re.search(r"(v\d+)", p_name)
@@ -544,4 +557,3 @@ class AgentTraceReplayer:
                     return m.group(1)
                 return pset.name
         return "v1"
-

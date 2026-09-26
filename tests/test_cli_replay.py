@@ -171,4 +171,3 @@ def test_cli_replay_versioned_comparison_v1_vs_v2():
     assert "0.91" in result.stdout
     assert "Semantic risk:" in result.stdout
     assert "0.94" in result.stdout
-

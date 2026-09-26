@@ -4,9 +4,7 @@ Supports JSON arrays, JSON Lines (NDJSON), envelope dictionaries,
 and LLM agent tool call transcripts.
 """
 
-from datetime import datetime, timezone
 import json
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -75,14 +73,14 @@ class TraceLoader:
                 actions.append(act)
                 continue
             if isinstance(item, dict):
-                act = cls._dict_to_action(
+                parsed_act = cls._dict_to_action(
                     item,
                     step_index=idx,
                     session_id=metadata.get("session_id", default_session_id),
                     agent_id=metadata.get("agent_id", default_agent_id),
                 )
-                if act:
-                    actions.append(act)
+                if parsed_act:
+                    actions.append(parsed_act)
                     continue
 
         return actions, metadata
@@ -170,11 +168,7 @@ class TraceLoader:
 
         # C. Direct Action/Event attributes
         raw_type = (
-            data.get("action_type")
-            or data.get("type")
-            or data.get("event_type")
-            or data.get("action")
-            or "shell"
+            data.get("action_type") or data.get("type") or data.get("event_type") or data.get("action") or "shell"
         )
         raw_type_str = str(raw_type).lower()
 

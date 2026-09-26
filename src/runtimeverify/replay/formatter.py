@@ -4,13 +4,11 @@ for the RuntimeVerify Attack / Agent Replay Engine.
 """
 
 from pathlib import Path
-from typing import Any, Dict, Optional
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
-from runtimeverify.replay.models import ReplayReport, ReplayStep
+from runtimeverify.replay.models import ReplayReport
 
 
 class ReplayFormatter:
@@ -32,11 +30,7 @@ class ReplayFormatter:
                 msg.encode(enc)
                 console.print(msg)
             except Exception:
-                fallback = (
-                    msg.replace("\u2500", "-")
-                    .replace("\u2192", "->")
-                    .replace("—", "-")
-                )
+                fallback = msg.replace("\u2500", "-").replace("\u2192", "->").replace("—", "-")
                 console.print(fallback)
 
         print_line("[bold white]RuntimeVerify Replay[/bold white]")
@@ -94,7 +88,11 @@ class ReplayFormatter:
 
         # 1. Header Panel
         strat_badge = f"[bold cyan]{report.strategy.upper()}[/bold cyan]"
-        verdict_color = "green" if report.summary.overall_verdict == "ALLOW" else ("red" if report.summary.overall_verdict == "BLOCK" else "yellow")
+        verdict_color = (
+            "green"
+            if report.summary.overall_verdict == "ALLOW"
+            else ("red" if report.summary.overall_verdict == "BLOCK" else "yellow")
+        )
         verdict_badge = f"[bold {verdict_color}]{report.summary.overall_verdict}[/bold {verdict_color}]"
 
         header_text = (
@@ -186,7 +184,7 @@ class ReplayFormatter:
         if report.comparison:
             comp = report.comparison
             comp_table = Table(
-                title=f"What-If Policy Comparison: Baseline vs Candidate Policy",
+                title="What-If Policy Comparison: Baseline vs Candidate Policy",
                 title_style="bold yellow",
                 header_style="bold orange1",
                 show_lines=True,
@@ -199,7 +197,9 @@ class ReplayFormatter:
 
             for s in report.steps:
                 if s.verdict_diverged or verbose:
-                    b_style = "green" if s.final_verdict == "ALLOW" else ("red" if s.final_verdict == "BLOCK" else "yellow")
+                    b_style = (
+                        "green" if s.final_verdict == "ALLOW" else ("red" if s.final_verdict == "BLOCK" else "yellow")
+                    )
                     c_verdict = s.comparison_verdict or "ALLOW"
                     c_style = "green" if c_verdict == "ALLOW" else ("red" if c_verdict == "BLOCK" else "yellow")
 
@@ -222,42 +222,46 @@ class ReplayFormatter:
                     )
 
             console.print(comp_table)
-            console.print(Panel(
-                f"[bold cyan]What-If Impact Analysis:[/bold cyan] {comp.delta_description}\n"
-                f"[dim]Baseline Blocks: {comp.baseline_blocks}  |  Candidate Blocks: {comp.candidate_blocks}  |  Divergent Steps: {comp.divergent_steps}[/dim]",
-                title="Policy Change Assessment",
-                border_style="yellow",
-            ))
+            console.print(
+                Panel(
+                    f"[bold cyan]What-If Impact Analysis:[/bold cyan] {comp.delta_description}\n"
+                    f"[dim]Baseline Blocks: {comp.baseline_blocks}  |  Candidate Blocks: {comp.candidate_blocks}  |  Divergent Steps: {comp.divergent_steps}[/dim]",
+                    title="Policy Change Assessment",
+                    border_style="yellow",
+                )
+            )
 
         # 4. Summary & Verification Verdict Panel
-        s = report.summary
+        summary = report.summary
         summary_lines = [
-            f"[bold white]Total Evaluated Steps:[/bold white] {s.total_steps}  "
-            f"([bold green]{s.allowed_steps} ALLOW[/bold green] | "
-            f"[bold yellow]{s.reviewed_steps} REVIEW[/bold yellow] | "
-            f"[bold red]{s.blocked_steps} BLOCK[/bold red])",
+            f"[bold white]Total Evaluated Steps:[/bold white] {summary.total_steps}  "
+            f"([bold green]{summary.allowed_steps} ALLOW[/bold green] | "
+            f"[bold yellow]{summary.reviewed_steps} REVIEW[/bold yellow] | "
+            f"[bold red]{summary.blocked_steps} BLOCK[/bold red])",
             f"[bold white]Layer Activations:[/bold white] "
-            f"Policy rules: [cyan]{s.policy_triggers_count}[/cyan] | "
-            f"Laya semantic flags: [cyan]{s.semantic_flags_count}[/cyan] | "
-            f"Markov/SPRT drift: [cyan]{s.sprt_anomalies_count}[/cyan]",
+            f"Policy rules: [cyan]{summary.policy_triggers_count}[/cyan] | "
+            f"Laya semantic flags: [cyan]{summary.semantic_flags_count}[/cyan] | "
+            f"Markov/SPRT drift: [cyan]{summary.sprt_anomalies_count}[/cyan]",
             f"[bold white]Verification Latency:[/bold white] "
-            f"Mean: [green]{s.avg_latency_ms:.3f}ms[/green] | Peak: {s.max_latency_ms:.3f}ms | Total Elapsed: {s.total_duration_ms:.2f}ms",
+            f"Mean: [green]{summary.avg_latency_ms:.3f}ms[/green] | Peak: {summary.max_latency_ms:.3f}ms | Total Elapsed: {summary.total_duration_ms:.2f}ms",
         ]
 
-        if s.first_intervention_step is not None:
+        if summary.first_intervention_step is not None:
             rule_id = ""
-            if s.first_intervention_layer == "Policy" and s.first_intervention_step <= len(report.steps):
-                step_obj = report.steps[s.first_intervention_step - 1]
+            if summary.first_intervention_layer == "Policy" and summary.first_intervention_step <= len(report.steps):
+                step_obj = report.steps[summary.first_intervention_step - 1]
                 if step_obj.policy_id:
                     rule_id = f" (Rule: {step_obj.policy_id})"
 
             summary_lines.append(
-                f"[bold red]First Security Intervention:[/bold red] Step [bold]{s.first_intervention_step}[/bold] "
-                f"triggered by [bold cyan]{s.first_intervention_layer}{rule_id}[/bold cyan]\n"
-                f"  [dim italic]Reason: {s.first_intervention_reason}[/dim italic]"
+                f"[bold red]First Security Intervention:[/bold red] Step [bold]{summary.first_intervention_step}[/bold] "
+                f"triggered by [bold cyan]{summary.first_intervention_layer}{rule_id}[/bold cyan]\n"
+                f"  [dim italic]Reason: {summary.first_intervention_reason}[/dim italic]"
             )
         else:
-            summary_lines.append("[bold green]All actions in this trace satisfied active verification constraints.[/bold green]")
+            summary_lines.append(
+                "[bold green]All actions in this trace satisfied active verification constraints.[/bold green]"
+            )
 
         console.print(Panel("\n".join(summary_lines), title="[bold]Replay Summary[/bold]", border_style=verdict_color))
 
@@ -265,20 +269,20 @@ class ReplayFormatter:
     def render_markdown(cls, report: ReplayReport) -> str:
         """Generates a complete GitHub Flavored Markdown audit report."""
         lines = [
-            f"# Attack & Agent Replay Audit Report",
-            f"",
+            "# Attack & Agent Replay Audit Report",
+            "",
             f"**Trace Source:** `{report.trace_source}`  ",
             f"**Session ID:** `{report.session_id}` | **Agent ID:** `{report.agent_id}`  ",
             f"**Strategy:** `{report.strategy}` | **Policy:** `{report.policy_path}`  ",
             f"**Execution Date:** `{report.timestamp.isoformat()}`  ",
             f"**Overall Verdict:** **`{report.summary.overall_verdict}`**  ",
-            f"",
-            f"---",
-            f"",
-            f"## 1. Executive Summary",
-            f"",
-            f"| Metric | Value |",
-            f"| :--- | :--- |",
+            "",
+            "---",
+            "",
+            "## 1. Executive Summary",
+            "",
+            "| Metric | Value |",
+            "| :--- | :--- |",
             f"| **Total Steps** | {report.summary.total_steps} |",
             f"| **Allowed Actions** | {report.summary.allowed_steps} |",
             f"| **Review Required** | {report.summary.reviewed_steps} |",
@@ -286,34 +290,40 @@ class ReplayFormatter:
             f"| **First Intervention** | Step {report.summary.first_intervention_step or 'None'} ({report.summary.first_intervention_layer or 'N/A'}) |",
             f"| **Mean Step Latency** | {report.summary.avg_latency_ms:.3f} ms |",
             f"| **Total Replay Time** | {report.summary.total_duration_ms:.2f} ms |",
-            f"",
-            f"---",
-            f"",
-            f"## 2. Multi-Layer Verification Flow",
-            f"",
-            f"```mermaid",
-            f"flowchart TD",
-            f"    A[\"Recorded Agent Trace: {report.session_id}\"] --> B[\"Agent Replay Engine\"]",
-            f"    B --> C[\"Deterministic Policy\"]",
-            f"    B --> D[\"Laya Semantic Analysis\"]",
-            f"    B --> E[\"Markov / SPRT Sequential Drift\"]",
-            f"    C --> F[\"Synthesized Verification\"]",
-            f"    D --> F",
-            f"    E --> F",
-            f"    F --> G{{\"Final Decision: {report.summary.overall_verdict}\"}}",
-            f"```",
-            f"",
-            f"---",
-            f"",
-            f"## 3. Step-by-Step Telemetry",
-            f"",
-            f"| Step | Action | Target | Policy Layer | Laya Semantic | Markov/SPRT | Verdict | Latency |",
-            f"| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |",
+            "",
+            "---",
+            "",
+            "## 2. Multi-Layer Verification Flow",
+            "",
+            "```mermaid",
+            "flowchart TD",
+            f'    A["Recorded Agent Trace: {report.session_id}"] --> B["Agent Replay Engine"]',
+            '    B --> C["Deterministic Policy"]',
+            '    B --> D["Laya Semantic Analysis"]',
+            '    B --> E["Markov / SPRT Sequential Drift"]',
+            '    C --> F["Synthesized Verification"]',
+            "    D --> F",
+            "    E --> F",
+            f'    F --> G{{"Final Decision: {report.summary.overall_verdict}"}}',
+            "```",
+            "",
+            "---",
+            "",
+            "## 3. Step-by-Step Telemetry",
+            "",
+            "| Step | Action | Target | Policy Layer | Laya Semantic | Markov/SPRT | Verdict | Latency |",
+            "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |",
         ]
 
         for s in report.steps:
-            pol = f"`{s.policy_verdict}`" if s.policy_verdict == "ALLOW" else f"**`{s.policy_verdict}`** ({s.policy_id})"
-            sem = f"`{s.semantic_verdict}`" if s.semantic_verdict == "SAFE" else f"**`{s.semantic_verdict}`** ({s.semantic_category})"
+            pol = (
+                f"`{s.policy_verdict}`" if s.policy_verdict == "ALLOW" else f"**`{s.policy_verdict}`** ({s.policy_id})"
+            )
+            sem = (
+                f"`{s.semantic_verdict}`"
+                if s.semantic_verdict == "SAFE"
+                else f"**`{s.semantic_verdict}`** ({s.semantic_category})"
+            )
             if s.sprt_status == "ACCEPT_H1":
                 llr_str = f"{s.sprt_llr:.2f}" if s.sprt_llr is not None else "0.00"
                 sprt = f"**`DRIFT_H1`** (LLR={llr_str})"
@@ -323,32 +333,40 @@ class ReplayFormatter:
                 p_str = f"p={s.markov_probability:.2f}" if s.markov_probability is not None else "p=1.00"
                 sprt = f"`NORMAL` ({p_str})"
             v = f"**`{s.final_verdict}`**"
-            lines.append(f"| {s.step_number} | `{s.action_type}:{s.name}` | `{s.target}` | {pol} | {sem} | {sprt} | {v} | {s.latency_ms:.2f}ms |")
+            lines.append(
+                f"| {s.step_number} | `{s.action_type}:{s.name}` | `{s.target}` | {pol} | {sem} | {sprt} | {v} | {s.latency_ms:.2f}ms |"
+            )
 
         if report.comparison:
             comp = report.comparison
-            lines.extend([
-                f"",
-                f"---",
-                f"",
-                f"## 4. What-If Policy Change Analysis",
-                f"",
-                f"**Baseline Policy:** `{comp.baseline_policy}`  ",
-                f"**Candidate Policy:** `{comp.candidate_policy}`  ",
-                f"**Impact Summary:** {comp.delta_description}  ",
-                f"",
-                f"| Step | Target | Baseline Verdict | Candidate Verdict | Divergence |",
-                f"| :--- | :--- | :--- | :--- | :--- |",
-            ])
+            lines.extend(
+                [
+                    "",
+                    "---",
+                    "",
+                    "## 4. What-If Policy Change Analysis",
+                    "",
+                    f"**Baseline Policy:** `{comp.baseline_policy}`  ",
+                    f"**Candidate Policy:** `{comp.candidate_policy}`  ",
+                    f"**Impact Summary:** {comp.delta_description}  ",
+                    "",
+                    "| Step | Target | Baseline Verdict | Candidate Verdict | Divergence |",
+                    "| :--- | :--- | :--- | :--- | :--- |",
+                ]
+            )
             for s in report.steps:
                 if s.verdict_diverged:
-                    lines.append(f"| {s.step_number} | `{s.target}` | `{s.final_verdict}` | **`{s.comparison_verdict}`** | Changed |")
+                    lines.append(
+                        f"| {s.step_number} | `{s.target}` | `{s.final_verdict}` | **`{s.comparison_verdict}`** | Changed |"
+                    )
 
-        lines.extend([
-            f"",
-            f"---",
-            f"",
-            f"*Generated by RuntimeVerify Attack Replay Engine*",
-        ])
+        lines.extend(
+            [
+                "",
+                "---",
+                "",
+                "*Generated by RuntimeVerify Attack Replay Engine*",
+            ]
+        )
 
         return "\n".join(lines)

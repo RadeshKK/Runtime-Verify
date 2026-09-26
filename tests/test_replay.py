@@ -11,7 +11,6 @@ from runtimeverify.interception.models import ActionType
 from runtimeverify.replay import (
     AgentTraceReplayer,
     ReplayFormatter,
-    ReplayReport,
     TraceLoader,
 )
 from rich.console import Console
@@ -288,4 +287,3 @@ class TestVersionedSecurityExperiments:
         assert comp.candidate_behavioral_drift == 0.91
         assert comp.semantic_risk == 0.94
         assert "Attack detected 3 step(s) earlier" in comp.delta_description
-
