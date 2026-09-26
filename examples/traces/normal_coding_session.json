@@ -1,0 +1,32 @@
+[
+  {
+    "action_type": "filesystem",
+    "name": "read",
+    "target": "src/main.py",
+    "params": {"operation": "read", "path": "src/main.py"}
+  },
+  {
+    "action_type": "filesystem",
+    "name": "write",
+    "target": "src/main.py",
+    "params": {"operation": "write", "path": "src/main.py", "content": "# Added helper function"}
+  },
+  {
+    "action_type": "shell",
+    "name": "execute",
+    "target": "pytest tests/",
+    "params": {"command": "pytest tests/"}
+  },
+  {
+    "action_type": "shell",
+    "name": "execute",
+    "target": "git status",
+    "params": {"command": "git status"}
+  },
+  {
+    "action_type": "git",
+    "name": "commit",
+    "target": "main",
+    "params": {"operation": "commit", "commit_message": "feat: add helper function"}
+  }
+]

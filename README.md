@@ -219,12 +219,28 @@ runtimeverify check --url "http://169.254.169.254/latest/meta-data"
 
 ---
 
+### 6. Attack & Agent Replay (`runtimeverify replay`)
+Replay historical agent execution traces to ask **"What would RuntimeVerify have done?"** or evaluate **"What happens if I change the policy?"**:
+
+```bash
+# Replay an attack trace through Policy + Laya + Markov/SPRT defenses
+runtimeverify replay examples/traces/credential_access_attack.json
+
+# What-If policy comparison: evaluate impact of tightening policy
+runtimeverify replay examples/traces/normal_coding_session.json \
+  --policy examples/policies/developer.yaml \
+  --compare-policy examples/policies/strict.yaml
+```
+
+---
+
 ## 💻 CLI Commands Overview
 
 | Command | Description | Example |
 |---|---|---|
 | `runtimeverify init` | Initialize local workspace and `.runtimeverify/config.yaml` | `runtimeverify init` |
 | `runtimeverify check` | Test an action or command against active policies | `runtimeverify check --command "git status"` |
+| `runtimeverify replay` | Replay recorded agent traces through multi-layer verification & what-if analysis | `runtimeverify replay trace.json` |
 | `runtimeverify run` | Supervise an agent process under runtime enforcement | `runtimeverify run --policy policy.yaml -- python agent.py` |
 | `runtimeverify monitor` | Stream real-time events and decisions for an agent | `runtimeverify monitor --agent coding-agent` |
 | `runtimeverify policy` | Validate or test policy files | `runtimeverify policy validate policy.yaml` |

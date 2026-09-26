@@ -1,0 +1,14 @@
+[
+  {
+    "action_type": "filesystem",
+    "name": "read",
+    "target": "src/main.py",
+    "params": {"operation": "read", "path": "src/main.py"}
+  },
+  {
+    "action_type": "shell",
+    "name": "execute",
+    "target": "rm -rf /",
+    "params": {"command": "rm -rf /"}
+  }
+]

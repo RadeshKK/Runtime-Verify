@@ -155,6 +155,33 @@ runtimeverify monitor --trace traces/session_01.json --json
 
 ---
 
+### `runtimeverify replay`
+
+Replays recorded agent execution traces through multi-layer verification (Policy, Laya, Markov/SPRT) and simulates what-if policy comparisons.
+
+```bash
+# Replay a recorded agent trace against active policies
+runtimeverify replay examples/traces/credential_access_attack.json
+
+# What-If policy comparison: evaluate impact of tightening policy
+runtimeverify replay examples/traces/normal_coding_session.json \
+  --policy examples/policies/developer.yaml \
+  --compare-policy examples/policies/strict.yaml
+
+# Halt immediately on first blocked action
+runtimeverify replay examples/traces/destructive_attack.json --fail-fast
+
+# Emit structured JSON audit for CI/CD gates
+runtimeverify replay examples/traces/exfiltration_attack.json --json
+
+# Generate executive Markdown audit report
+runtimeverify replay examples/traces/prompt_injection_attack.json --report replay_audit.md
+```
+
+Detailed documentation: [`docs/cli/replay.md`](replay.md)
+
+---
+
 ### `runtimeverify policy validate`
 
 Validates policy YAML syntax, schema conformity, and regex patterns.

@@ -2221,7 +2221,109 @@ def explain(
     for target in explanation.expected_transitions:
         table.add_row(target["state"], f"{target['probability']:.6f}", str(target["count"]))
 
-    console.print(table)
+
+# ============================================================================
+# 10.5. Agent & Attack Replay: replay
+# ============================================================================
+
+
+@app.command()
+def replay(
+    trace_file: str = typer.Argument(..., help="Path to recorded agent trace file (.json, .jsonl)"),
+    policy_path: str = typer.Option("examples/policies/default.yaml", "--policy", "-p", help="Policy YAML file path"),
+    compare_policy: Optional[str] = typer.Option(
+        None, "--compare-policy", "--diff", help="Optional candidate policy YAML to evaluate what-if impact"
+    ),
+    strategy: str = typer.Option(
+        "hybrid", "--strategy", "-s", help="Verification strategy: hybrid, rules, semantic, markov, rules_markov"
+    ),
+    model_path: Optional[str] = typer.Option(None, "--model", "-m", help="Path to trained Markov model JSON"),
+    alpha: float = typer.Option(0.05, "--alpha", help="SPRT Type I error limit (false alarm tolerance)"),
+    beta: float = typer.Option(0.05, "--beta", help="SPRT Type II error limit (missed attack tolerance)"),
+    fail_fast: bool = typer.Option(False, "--fail-fast", help="Halt replay immediately upon first BLOCK decision"),
+    only_interventions: bool = typer.Option(
+        False, "--only-interventions", "--flagged-only", help="Display only steps resulting in REVIEW or BLOCK"
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Output replay report as structured JSON"),
+    report_file: Optional[str] = typer.Option(None, "--report", "-r", help="Save Markdown audit report to file"),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help="Quiet mode: return exit code only"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose diagnostic output"),
+):
+    """
+    Replays recorded agent traces through multi-layer verification (Policy, Laya, Markov/SPRT).
+    Evaluates historical telemetry against security policies and simulates what-if policy changes.
+    Exit codes:
+      0 = All steps ALLOW
+      2 = At least one step was BLOCKED
+      3 = At least one step required REVIEW (none BLOCKED)
+      1 = Error reading trace or policy
+    """
+    from runtimeverify.replay import AgentTraceReplayer, ReplayFormatter
+
+    if not os.path.exists(trace_file):
+        if json_output:
+            console.print(json.dumps({"error": f"Trace file '{trace_file}' not found", "code": 1}))
+        else:
+            console.print(f"[red]Error: Trace file '{trace_file}' not found.[/red]")
+        raise typer.Exit(code=1)
+
+    try:
+        replayer = AgentTraceReplayer(
+            policy_path=policy_path,
+            compare_policy_path=compare_policy,
+            strategy=strategy,
+            model_path=model_path,
+            alpha=alpha,
+            beta=beta,
+            fail_fast=fail_fast,
+        )
+    except Exception as e:
+        if json_output:
+            console.print(json.dumps({"error": f"Failed to initialize replayer: {e}", "code": 1}))
+        else:
+            console.print(f"[red]Failed to initialize replayer: {e}[/red]")
+        raise typer.Exit(code=1)
+
+    try:
+        report = replayer.replay(trace_file)
+    except Exception as e:
+        if json_output:
+            console.print(json.dumps({"error": f"Replay execution failed: {e}", "code": 1}))
+        else:
+            console.print(f"[red]Replay execution failed: {e}[/red]")
+        raise typer.Exit(code=1)
+
+    # 1. JSON Output
+    if json_output:
+        console.print(json.dumps(report.model_dump(mode="json"), indent=2))
+    # 2. Terminal Visual Output
+    elif not quiet:
+        ReplayFormatter.render_terminal(
+            report,
+            console=console,
+            verbose=verbose,
+            only_interventions=only_interventions,
+        )
+
+    # 3. Optional Markdown Report File
+    if report_file:
+        try:
+            md_content = ReplayFormatter.render_markdown(report)
+            with open(report_file, "w", encoding="utf-8") as f:
+                f.write(md_content)
+            if not quiet and not json_output:
+                console.print(f"[green]Audit report written to [bold]{report_file}[/bold][/green]")
+        except Exception as e:
+            if not quiet and not json_output:
+                console.print(f"[yellow]Warning: Failed to save report file: {e}[/yellow]")
+
+    # 4. Exit Code Resolution
+    if report.summary.overall_verdict == "BLOCK":
+        raise typer.Exit(code=2)
+    elif report.summary.overall_verdict == "REVIEW":
+        raise typer.Exit(code=3)
+    else:
+        raise typer.Exit(code=0)
 
 
 # ============================================================================
