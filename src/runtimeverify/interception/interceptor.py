@@ -123,6 +123,7 @@ class RuntimeActionInterceptor(ActionInterceptor):
         self.audit_sink = audit_sink
         self._audit_log: List[AuditLogEntry] = []
         self._session_prev_tokens: Dict[str, str] = {}
+        self._session_action_history: Dict[str, List[Action]] = {}
 
     @property
     def audit_log(self) -> List[AuditLogEntry]:
@@ -130,8 +131,9 @@ class RuntimeActionInterceptor(ActionInterceptor):
         return list(self._audit_log)
 
     def clear_audit_log(self) -> None:
-        """Clears in-memory audit records."""
+        """Clears in-memory audit records and session histories."""
         self._audit_log.clear()
+        self._session_action_history.clear()
 
     def intercept(
         self,
@@ -154,7 +156,8 @@ class RuntimeActionInterceptor(ActionInterceptor):
         policy_decision = None
         if self.policy_evaluator and canonical_event is not None:
             try:
-                policy_decision = self.policy_evaluator.evaluate(canonical_event)
+                hist = self._session_action_history.get(action.session_id, [])
+                policy_decision = self.policy_evaluator.evaluate(canonical_event, session_history=hist)
             except Exception as e:
                 logger.error("Policy evaluation failed on action '%s': %s", action.action_id, e)
                 if self.fail_closed and self.mode == InterceptionMode.ENFORCE:
@@ -243,6 +246,11 @@ class RuntimeActionInterceptor(ActionInterceptor):
             "final_status": final_status,
             "final_reason": final_reason,
         }
+
+        if action.session_id:
+            if action.session_id not in self._session_action_history:
+                self._session_action_history[action.session_id] = []
+            self._session_action_history[action.session_id].append(action)
 
         # Handle OBSERVE Mode
         if self.mode == InterceptionMode.OBSERVE:

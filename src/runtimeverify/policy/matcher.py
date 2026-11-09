@@ -3,7 +3,7 @@ import ipaddress
 import logging
 import os
 import re
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 import urllib.parse
 
 from runtimeverify.events.base import Event
@@ -51,6 +51,7 @@ class PolicyMatcher:
         policy: Policy,
         event: Event,
         security_state: Optional[SecurityState] = None,
+        session_history: Optional[List[Any]] = None,
     ) -> Tuple[bool, Optional[str]]:
         """
         Evaluates whether an event satisfies all criteria in a policy's match block.
@@ -182,8 +183,60 @@ class PolicyMatcher:
             if not cls.matches_agent(event, criteria.agent):
                 return False, None
 
+        # 13. Temporal criteria evaluation
+        if criteria.temporal is not None:
+            temporal_matched, temporal_reason = cls._matches_temporal(criteria.temporal, event, session_history)
+            if not temporal_matched:
+                return False, None
+            if temporal_reason:
+                return True, temporal_reason
+
         reason = policy.reason or f"Triggered policy rule '{policy.id}' ({policy.decision.value})"
         return True, reason
+
+    @classmethod
+    def _matches_temporal(
+        cls,
+        temporal: Any,
+        event: Event,
+        session_history: Optional[List[Any]],
+    ) -> Tuple[bool, Optional[str]]:
+        history = list(session_history or [])
+        if temporal.max_lookback_steps is not None and temporal.max_lookback_steps > 0:
+            history = history[-temporal.max_lookback_steps :]
+
+        historical_tokens = set()
+        for h in history:
+            if isinstance(h, str):
+                historical_tokens.add(h.lower())
+            elif hasattr(h, "target") and h.target:
+                historical_tokens.add(str(h.target).lower())
+            elif isinstance(h, dict):
+                if "target" in h and h["target"]:
+                    historical_tokens.add(str(h["target"]).lower())
+                if "event_type" in h and h["event_type"]:
+                    historical_tokens.add(str(h["event_type"]).lower())
+                if "command" in h and h["command"]:
+                    historical_tokens.add(str(h["command"]).lower())
+            if hasattr(h, "event_type") and h.event_type:
+                ev_str = h.event_type.value if hasattr(h.event_type, "value") else str(h.event_type)
+                historical_tokens.add(ev_str.lower())
+
+        # Check requires_prior_actions
+        if temporal.requires_prior_actions:
+            for req in temporal.requires_prior_actions:
+                req_lower = req.lower()
+                if not any(req_lower == t or req_lower in t for t in historical_tokens):
+                    return True, f"Temporal invariant: Missing required prerequisite action '{req}'"
+
+        # Check forbidden_prior_actions
+        if temporal.forbidden_prior_actions:
+            for forb in temporal.forbidden_prior_actions:
+                forb_lower = forb.lower()
+                if any(forb_lower == t or forb_lower in t for t in historical_tokens):
+                    return True, f"Temporal invariant: Forbidden prior action '{forb}' detected in session history"
+
+        return False, None
 
     @classmethod
     def matches_string_pattern(

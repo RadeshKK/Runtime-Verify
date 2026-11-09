@@ -16,3 +16,6 @@ training_traces.json
 dist/
 build/
 hallmark/
+client_secret*.json
+*token*.json
+

@@ -176,6 +176,25 @@ class AgentPattern(BaseModel):
     agent_types: Optional[List[str]] = Field(None, description="Agent roles or archetypes (e.g. ['coder', 'worker'])")
 
 
+class TemporalPolicyCriteria(BaseModel):
+    """
+    Temporal sequence constraints for policy enforcement.
+    Requires or forbids specific historical actions in the active session.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    requires_prior_actions: Optional[List[str]] = Field(
+        None, description="Action targets or event types that MUST have succeeded earlier in this session"
+    )
+    forbidden_prior_actions: Optional[List[str]] = Field(
+        None, description="Action targets or event types that MUST NOT have occurred in this session"
+    )
+    max_lookback_steps: Optional[int] = Field(
+        None, description="Maximum number of historical steps to look back (default: whole session)"
+    )
+
+
 class PolicyMatchCriteria(BaseModel):
     """
     Composite criteria used to match an incoming event.
@@ -205,6 +224,7 @@ class PolicyMatchCriteria(BaseModel):
     credential: Optional[Union[CredentialPattern, str]] = Field(None, description="Credential access criteria")
     tool: Optional[Union[ToolPattern, str]] = Field(None, description="Tool invocation criteria")
     agent: Optional[Union[AgentPattern, str]] = Field(None, description="Agent identity criteria")
+    temporal: Optional[TemporalPolicyCriteria] = Field(None, description="Temporal sequence and prerequisite criteria")
 
     @model_validator(mode="before")
     @classmethod

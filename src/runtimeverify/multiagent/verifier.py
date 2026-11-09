@@ -4,9 +4,11 @@ Orchestrates topology validation, privilege boundary enforcement,
 Markov behavioral transitions, and SPRT sequential trajectory verification.
 """
 
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from runtimeverify.events.base import Event
 from runtimeverify.multiagent.models import (
+    DelegationTicket,
     MultiAgentAnomaly,
     MultiAgentAnomalyType,
     MultiAgentDecision,
@@ -28,11 +30,97 @@ class MultiAgentVerifier:
         markov_model: Optional[MultiAgentMarkovModel] = None,
         sprt_engine: Optional[MultiAgentSPRTEngine] = None,
         fail_closed: bool = True,
+        delegation_secrets: Optional[Dict[str, str]] = None,
     ):
         self.topology = topology or TopologyGraph.pipeline()
         self.markov_model = markov_model
         self.sprt_engine = sprt_engine
         self.fail_closed = fail_closed
+        self.delegation_secrets = delegation_secrets or {}
+
+    def verify_delegation(
+        self,
+        ticket: DelegationTicket,
+        secret_key: Optional[str] = None,
+        action: Optional[str] = None,
+        current_time: Optional[datetime] = None,
+    ) -> MultiAgentDecision:
+        """
+        Cryptographically validates delegation ticket signature, expiration, and scope.
+        """
+        key = secret_key or self.delegation_secrets.get(ticket.parent_agent, "")
+        if not key or not ticket.verify_signature(key):
+            anom = MultiAgentAnomaly(
+                anomaly_type=MultiAgentAnomalyType.UNEXPECTED_DELEGATION,
+                source_agent=ticket.parent_agent,
+                source_role="unknown",
+                target_agent=ticket.child_agent,
+                action=action or "delegate",
+                severity="CRITICAL",
+                reason=f"Cryptographic signature verification failed for delegation ticket '{ticket.ticket_id}'.",
+                evidence={"ticket_id": ticket.ticket_id, "signature": ticket.signature},
+            )
+            return MultiAgentDecision(
+                decision="BLOCK",
+                risk_level="CRITICAL",
+                confidence=1.0,
+                anomalies=[anom],
+                reason=anom.reason,
+                evidence=[{"type": "delegation_signature_failure", "ticket_id": ticket.ticket_id}],
+                topology_matched=False,
+            )
+
+        if ticket.is_expired(current_time):
+            anom = MultiAgentAnomaly(
+                anomaly_type=MultiAgentAnomalyType.UNEXPECTED_DELEGATION,
+                source_agent=ticket.parent_agent,
+                source_role="unknown",
+                target_agent=ticket.child_agent,
+                action=action or "delegate",
+                severity="HIGH",
+                reason=f"Delegation ticket '{ticket.ticket_id}' expired at {ticket.expires_at.isoformat()}.",
+                evidence={"ticket_id": ticket.ticket_id, "expires_at": ticket.expires_at.isoformat()},
+            )
+            return MultiAgentDecision(
+                decision="BLOCK",
+                risk_level="HIGH",
+                confidence=1.0,
+                anomalies=[anom],
+                reason=anom.reason,
+                evidence=[{"type": "delegation_expired", "ticket_id": ticket.ticket_id}],
+                topology_matched=False,
+            )
+
+        if action and not ticket.allows_action(action):
+            anom = MultiAgentAnomaly(
+                anomaly_type=MultiAgentAnomalyType.PRIVILEGE_ESCALATION,
+                source_agent=ticket.parent_agent,
+                source_role="unknown",
+                target_agent=ticket.child_agent,
+                action=action,
+                severity="CRITICAL",
+                reason=f"Action '{action}' exceeds permitted scope {ticket.scope} on delegation ticket '{ticket.ticket_id}'.",
+                evidence={"ticket_id": ticket.ticket_id, "scope": ticket.scope, "action": action},
+            )
+            return MultiAgentDecision(
+                decision="BLOCK",
+                risk_level="CRITICAL",
+                confidence=1.0,
+                anomalies=[anom],
+                reason=anom.reason,
+                evidence=[{"type": "delegation_scope_exceeded", "ticket_id": ticket.ticket_id}],
+                topology_matched=False,
+            )
+
+        return MultiAgentDecision(
+            decision="ALLOW",
+            risk_level="LOW",
+            confidence=1.0,
+            anomalies=[],
+            reason=f"Delegation ticket '{ticket.ticket_id}' valid for agent '{ticket.child_agent}' from '{ticket.parent_agent}'.",
+            evidence=[{"type": "delegation_verified", "ticket_id": ticket.ticket_id}],
+            topology_matched=True,
+        )
 
     def verify_event(self, event: Event) -> MultiAgentDecision:
         """
@@ -45,6 +133,19 @@ class MultiAgentVerifier:
         action = event.action or event.event_type or "message"
         depth = getattr(event, "delegation_depth", 0)
         call_chain = getattr(event, "call_chain", []) or []
+
+        # 0. Cryptographic Delegation Provenance Validation (if ticket attached)
+        ticket_raw = None
+        if hasattr(event, "payload") and isinstance(event.payload, dict):
+            ticket_raw = event.payload.get("delegation_ticket")
+        if not ticket_raw and hasattr(event, "metadata") and isinstance(event.metadata, dict):
+            ticket_raw = event.metadata.get("delegation_ticket")
+
+        if ticket_raw:
+            ticket = ticket_raw if isinstance(ticket_raw, DelegationTicket) else DelegationTicket(**ticket_raw)
+            ticket_decision = self.verify_delegation(ticket, action=action)
+            if ticket_decision.decision != "ALLOW":
+                return ticket_decision
 
         all_anomalies: List[MultiAgentAnomaly] = []
         evidence_list: List[Dict[str, Any]] = []

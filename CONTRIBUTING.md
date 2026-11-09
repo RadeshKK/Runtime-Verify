@@ -71,32 +71,67 @@ uv run ruff check --fix src/ tests/ examples/
 
 ---
 
-## 4. Branching & Commit Conventions
+## 4. Branching Strategy & Conventions
 
-1. **Branch Names**: Use clear prefixes:
-   - `feature/description` for new features or capabilities
-   - `fix/description` for bug fixes
-   - `security/description` for security mitigations or hardening
-   - `docs/description` for documentation improvements
-2. **Commit Messages**: Follow standard conventional commits:
-   - `feat(policy): add support for CIDR subnet matching`
-   - `fix(interceptor): prevent race condition during session disposal`
-   - `security(network): block alternative hexadecimal IP notations`
-   - `test(sprt): add edge case for zero variance transitions`
+RuntimeVerify adheres to a structured GitFlow/GitHub Flow branching model designed for zero-regression security systems:
+
+```
+master (v0.1.0) ───●────────────────────────────────────────● (v0.2.0)
+                   │                                        ▲
+                   │                                        │ (Release PR)
+develop ───────────●──────●──────────────────●──────────────●
+                          │                  ▲
+                          │ (Branch off)     │ (Feature PR)
+feature/sprint-2 ─────────●──────────────────●
+```
+
+### Core Branches
+- **`master`** *(Protected)*:
+  - Production-grade stable releases.
+  - Every commit is a version-tagged release (`vX.Y.Z`).
+  - Direct pushes are restricted; only merges via verified Pull Requests from `release/*` or `hotfix/*` branches.
+- **`develop`** *(Protected)*:
+  - Primary integration and active development branch.
+  - Continuous integration (CI) validates all unit tests, type checks, and security benchmarks on every push and PR.
+  - All new features and enhancements merge into `develop`.
+
+### Supporting Branches
+- **`feature/<name>`** (e.g. `feature/sprint-2-fail-closed`):
+  - Branches off: `develop`
+  - Merges into: `develop` via Pull Request with peer review and green CI.
+- **`release/<version>`** (e.g. `release/v0.2.0`):
+  - Branches off: `develop` when milestone is feature-complete.
+  - Used for final release validation, documentation polish, and version bumping.
+  - Merges into: `master` (tagged) and back into `develop`.
+- **`hotfix/<name>`** (e.g. `hotfix/cve-patch`):
+  - Branches off: `master` for urgent production fixes.
+  - Merges into: `master` (tagged) and `develop`.
+
+### Commit Message Conventions
+Follow Conventional Commits:
+- `feat(scope): ...` for new features or verifier rules
+- `fix(scope): ...` for bug fixes
+- `security(scope): ...` for security mitigations or hardening
+- `test(scope): ...` for test additions or benchmark scenarios
+- `docs(scope): ...` for documentation improvements
+- `chore(scope): ...` for CI/CD, dependency updates, or formatting
 
 ---
 
 ## 5. Submitting a Pull Request
 
-1. Push your branch to your fork or origin:
+1. Branch off `develop`:
    ```bash
-   git push origin feature/my-feature-branch
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/your-feature-name
    ```
-2. Open a Pull Request targeting the `master` branch.
-3. Complete the PR template description:
-   - **Summary of Changes**: What was added, modified, or fixed?
-   - **Threat / Security Impact**: Does this affect trust boundaries or policy enforcement?
-   - **Test Evidence**: Provide output of `uv run pytest` and `uv run mypy src/`.
-4. Ensure all CI checks (Formatting, Linting, MyPy, Tests, Security Audit, Package Check) turn green.
+2. Push your feature branch to origin:
+   ```bash
+   git push -u origin feature/your-feature-name
+   ```
+3. Open a Pull Request targeting the **`develop`** branch (or `master` for hotfixes/releases).
+4. Fill out the structured PR template (.github/pull_request_template.md).
+5. Ensure all CI checks (Ruff, MyPy, Pytest, Security Audit) pass.
 
 For questions or security vulnerability reports, please refer to our [Security Policy](file:///D:/runtime-verify/SECURITY.md).

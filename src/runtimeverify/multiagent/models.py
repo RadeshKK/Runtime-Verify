@@ -3,8 +3,13 @@ Multi-Agent Runtime Verification Models for RuntimeVerify (Phase 17).
 Defines schemas, roles, privilege tiers, anomalies, and decisions for multi-agent systems.
 """
 
+from datetime import datetime, timezone
 from enum import Enum
+import fnmatch
+import hashlib
+import hmac
 from typing import Any, Dict, List, Optional, Set
+import uuid
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -132,3 +137,71 @@ class MultiAgentDecision(BaseModel):
     )
     evidence: List[Dict[str, Any]] = Field(default_factory=list, description="Evidentiary records")
     topology_matched: bool = Field(True, description="Whether interaction conforms to declared topology graph")
+
+
+class DelegationTicket(BaseModel):
+    """
+    Cryptographically signed delegation authorization ticket establishing verifiable
+    provenance and bounded authority between collaborating agents in a swarm.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    ticket_id: str = Field(
+        default_factory=lambda: f"tkt_{uuid.uuid4().hex[:12]}",
+        description="Unique identifier for this delegation ticket",
+    )
+    parent_agent: str = Field(..., description="Agent delegating authority")
+    child_agent: str = Field(..., description="Agent receiving delegated authority")
+    session_id: str = Field(..., description="Trace session ID this ticket is valid for")
+    scope: List[str] = Field(
+        default_factory=lambda: ["*"],
+        description="List of permitted actions, tool names, or wildcards allowed under this ticket",
+    )
+    max_depth: int = Field(default=2, ge=1, description="Maximum sub-delegation depth allowed")
+    issued_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="UTC issuance timestamp",
+    )
+    expires_at: datetime = Field(
+        ...,
+        description="UTC expiration timestamp after which this ticket is invalid",
+    )
+    signature: str = Field("", description="HMAC-SHA256 signature binding ticket fields to parent agent key")
+
+    def compute_signature_payload(self) -> str:
+        """Deterministic canonical representation of ticket contents for signing."""
+        iso_issued = self.issued_at.isoformat()
+        iso_expires = self.expires_at.isoformat()
+        sorted_scope = ",".join(sorted(self.scope))
+        return f"{self.ticket_id}|{self.parent_agent}|{self.child_agent}|{self.session_id}|{sorted_scope}|{self.max_depth}|{iso_issued}|{iso_expires}"
+
+    def sign(self, secret_key: str) -> "DelegationTicket":
+        """Returns a new DelegationTicket with a cryptographically valid HMAC-SHA256 signature."""
+        payload = self.compute_signature_payload()
+        sig = hmac.new(secret_key.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+        data = self.model_dump()
+        data["signature"] = sig
+        return DelegationTicket(**data)
+
+    def verify_signature(self, secret_key: str) -> bool:
+        """Verifies that the ticket signature matches the payload and secret key."""
+        if not self.signature:
+            return False
+        payload = self.compute_signature_payload()
+        expected = hmac.new(secret_key.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+        return hmac.compare_digest(self.signature, expected)
+
+    def is_expired(self, current_time: Optional[datetime] = None) -> bool:
+        """Checks if the delegation ticket has expired."""
+        now = current_time or datetime.now(timezone.utc)
+        return now > self.expires_at
+
+    def allows_action(self, action_name: str) -> bool:
+        """Checks if the requested action is permitted within the ticket scope."""
+        if "*" in self.scope:
+            return True
+        for pattern in self.scope:
+            if pattern == action_name or fnmatch.fnmatch(action_name, pattern):
+                return True
+        return False
