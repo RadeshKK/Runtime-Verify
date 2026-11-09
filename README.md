@@ -9,6 +9,7 @@
 [![Type Checked: MyPy](https://img.shields.io/badge/type--check-mypy%20passed-blue.svg)](https://github.com/python/mypy)
 [![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Tests Passing](https://img.shields.io/badge/tests-413%20passed-brightgreen.svg)](https://github.com/RadeshKK/Runtime-Verify/actions)
+[![YouTube Video](https://img.shields.io/badge/YouTube-Watch%20Intro%20Video-FF0000?logo=youtube&logoColor=white)](https://youtu.be/P6i81HoFShg)
 
 **Vendor-neutral statistical runtime verification, deterministic policy governance, and behavioral security for single and multi-agent autonomous AI systems.**
 
@@ -20,13 +21,13 @@ RuntimeVerify protects host infrastructure and enterprise environments against a
 
 ## 🎬 45-Second Introduction: Runtime-Verify in Action (16:9 Widescreen)
 
-<a href="assets/runtime_verify_intro.mp4">
+<a href="https://youtu.be/P6i81HoFShg">
   <img src="assets/runtime_verify_preview.gif" width="760" alt="Runtime-Verify Widescreen Introduction Video Preview" style="border-radius: 12px; border: 2px solid #1E293B; box-shadow: 0 20px 40px rgba(0,0,0,0.6); max-width: 100%;" />
 </a>
 
 <p align="center">
-  <sub>Click preview above or play the Full HD 1080p video directly:</sub><br/>
-  <a href="assets/runtime_verify_intro.mp4"><b>▶ Play Full 1080p HD Video with Audio (assets/runtime_verify_intro.mp4)</b></a> &bull;
+  <sub>Click preview above or watch in Full 1080p HD on YouTube:</sub><br/>
+  <a href="https://youtu.be/P6i81HoFShg"><b>▶ Watch Full 1080p HD Video on YouTube (youtu.be/P6i81HoFShg)</b></a> &bull;
   <a href="assets/runtime_verify_contact_sheet.jpg"><b>🔍 View 10-Shot Storyboard Sheet</b></a>
 </p>
 
