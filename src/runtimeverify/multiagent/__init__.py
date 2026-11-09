@@ -6,6 +6,7 @@ sequential drift detection (SPRT), and privilege boundary verification across au
 
 from runtimeverify.multiagent.models import (
     AgentRole,
+    DelegationTicket,
     MultiAgentAnomaly,
     MultiAgentAnomalyType,
     MultiAgentDecision,
@@ -22,6 +23,7 @@ from runtimeverify.multiagent.verifier import MultiAgentVerifier
 __all__ = [
     # Models & Enums
     "AgentRole",
+    "DelegationTicket",
     "RolePrivilegeLevel",
     "TopologyType",
     "TopologyEdge",
