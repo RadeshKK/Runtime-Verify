@@ -1,3 +1,7 @@
+from runtimeverify.interception.contract import (
+    InterceptionFailureMode,
+    UnifiedInterceptionContract,
+)
 from runtimeverify.interception.exceptions import (
     ActionExecutionError,
     ExecutionBlockedError,
@@ -30,6 +34,8 @@ __all__ = [
     "SafeActionExecutor",
     "InterceptionDecision",
     "InterceptionMode",
+    "InterceptionFailureMode",
+    "UnifiedInterceptionContract",
     "AuditLogEntry",
     "ExecutionContext",
     # Structured Exceptions

@@ -35,6 +35,7 @@ class PolicyEvaluator:
         self,
         event: Event,
         security_state: Optional[SecurityState] = None,
+        session_history: Optional[List[Any]] = None,
     ) -> PolicyDecision:
         """
         Evaluates a runtime event against all enabled policies in the policy set
@@ -63,7 +64,7 @@ class PolicyEvaluator:
             if not policy.enabled:
                 continue
 
-            matches, reason = PolicyMatcher.matches_event(policy, event, state)
+            matches, reason = PolicyMatcher.matches_event(policy, event, state, session_history=session_history)
             if matches:
                 matched_list.append((policy, reason or f"Rule '{policy.id}' triggered"))
 
