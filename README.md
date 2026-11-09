@@ -18,15 +18,15 @@ RuntimeVerify protects host infrastructure and enterprise environments against a
 
 <div align="center">
 
-## 🎬 45-Second Introduction: Runtime-Verify in Action
+## 🎬 45-Second Introduction: Runtime-Verify in Action (16:9 Widescreen)
 
 <a href="assets/runtime_verify_intro.mp4">
-  <img src="assets/runtime_verify_preview.gif" width="400" alt="Runtime-Verify Introduction Video Preview" style="border-radius: 16px; border: 2px solid #1E293B; box-shadow: 0 20px 40px rgba(0,0,0,0.6);" />
+  <img src="assets/runtime_verify_preview.gif" width="760" alt="Runtime-Verify Widescreen Introduction Video Preview" style="border-radius: 12px; border: 2px solid #1E293B; box-shadow: 0 20px 40px rgba(0,0,0,0.6); max-width: 100%;" />
 </a>
 
 <p align="center">
-  <sub>Click preview above or watch the native high-definition MP4 directly:</sub><br/>
-  <a href="assets/runtime_verify_intro.mp4"><b>▶ Play Full MP4 Video with Audio (assets/runtime_verify_intro.mp4)</b></a> &bull;
+  <sub>Click preview above or play the Full HD 1080p video directly:</sub><br/>
+  <a href="assets/runtime_verify_intro.mp4"><b>▶ Play Full 1080p HD Video with Audio (assets/runtime_verify_intro.mp4)</b></a> &bull;
   <a href="assets/runtime_verify_contact_sheet.jpg"><b>🔍 View 10-Shot Storyboard Sheet</b></a>
 </p>
 
