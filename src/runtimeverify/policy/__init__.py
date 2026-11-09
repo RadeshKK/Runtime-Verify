@@ -1,5 +1,6 @@
 from runtimeverify.policy.engine import PolicyEngine
 from runtimeverify.policy.evaluator import PolicyEvaluator
+from runtimeverify.policy.impact import ActionImpactItem, PolicyImpactAnalyzer, PolicyImpactReport
 from runtimeverify.policy.loader import (
     dump_policy_to_dict,
     dump_policy_to_yaml,
@@ -52,6 +53,10 @@ __all__ = [
     "load_policy_from_dict",
     "dump_policy_to_yaml",
     "dump_policy_to_dict",
+    # Impact simulation & replay
+    "PolicyImpactAnalyzer",
+    "PolicyImpactReport",
+    "ActionImpactItem",
     # Legacy statistical deviation evaluator
     "PolicyEngine",
 ]
