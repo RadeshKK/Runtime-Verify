@@ -14,7 +14,7 @@ Covers:
 """
 
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import pytest
 
 from runtimeverify.interception import (
@@ -59,8 +59,8 @@ class MockLayaRouter:
         self.requires_review_noul = requires_review_noul
         self.delay_sec = delay_sec
         self.raise_exc = raise_exc
-        self.last_state_text = None
-        self.last_questions = None
+        self.last_state_text: Optional[str] = None
+        self.last_questions: Optional[Dict[str, Any]] = None
 
     def predict(self, state: str, questions: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
         self.last_state_text = state
@@ -326,6 +326,7 @@ class TestSecurityHierarchyInterception:
         # Verify in audit log that semantic signal was captured but did not overturn BLOCK
         audit = interceptor.audit_log[-1]
         assert audit.decision.status == "BLOCK"
+        assert audit.decision.semantic_signal is not None
         assert audit.decision.semantic_signal.decision_signal == DecisionSignalType.ALLOW
         assert audit.decision.semantic_signal.risk_level == RiskClassification.LOW
 
@@ -387,6 +388,7 @@ class TestSecurityHierarchyInterception:
         assert "SEMANTIC ESCALATION: laya" in exc_info.value.reason
         audit = interceptor.audit_log[-1]
         assert audit.decision.status == "BLOCK"
+        assert audit.decision.semantic_signal is not None
         assert audit.decision.semantic_signal.risk_level == RiskClassification.CRITICAL
 
     def test_semantic_escalation_reviews_deterministic_allow(self, default_policy_evaluator: PolicyEvaluator):
@@ -414,6 +416,7 @@ class TestSecurityHierarchyInterception:
         assert "SEMANTIC ESCALATION: laya" in exc_info.value.reason
         audit = interceptor.audit_log[-1]
         assert audit.decision.status == "REVIEW"
+        assert audit.decision.semantic_signal is not None
         assert audit.decision.semantic_signal.risk_level == RiskClassification.HIGH
 
     def test_semantic_escalation_in_observe_mode(self, default_policy_evaluator: PolicyEvaluator):

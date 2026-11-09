@@ -337,6 +337,62 @@ class TestApprovalSecurity:
         assert ApprovalTokenManager.verify_token(token, None) is False
         assert ApprovalTokenManager.verify_token(None, token) is False
 
+    def test_action_bound_token_validation(self):
+        action = {"command": "git push origin main", "tool": "shell"}
+        agent_id = "agent-deployer"
+        session_id = "sess-1234"
+
+        digest = ApprovalTokenManager.compute_action_digest(action, agent_id=agent_id, session_id=session_id)
+        assert len(digest) == 64  # SHA-256 hex length
+
+        bound_token = ApprovalTokenManager.generate_bound_token(action, agent_id=agent_id, session_id=session_id)
+        assert "." in bound_token
+
+        # Exact action and context passes
+        assert (
+            ApprovalTokenManager.verify_bound_token(bound_token, action, agent_id=agent_id, session_id=session_id)
+            is True
+        )
+
+        # Tampered action parameters fail
+        tampered_action = {"command": "rm -rf /", "tool": "shell"}
+        assert (
+            ApprovalTokenManager.verify_bound_token(
+                bound_token, tampered_action, agent_id=agent_id, session_id=session_id
+            )
+            is False
+        )
+
+        # Tampered agent context fails
+        assert (
+            ApprovalTokenManager.verify_bound_token(
+                bound_token, action, agent_id="imposter-agent", session_id=session_id
+            )
+            is False
+        )
+
+        # Tampered session fails
+        assert (
+            ApprovalTokenManager.verify_bound_token(
+                bound_token, action, agent_id=agent_id, session_id="imposter-session"
+            )
+            is False
+        )
+
+    def test_approval_request_action_digest_binding(self):
+        action = {"tool": "terminal", "args": ["deploy.sh"]}
+        req = ApprovalRequest(
+            reason="High risk deploy",
+            expiration=datetime.now(timezone.utc) + timedelta(minutes=5),
+            action=action,
+            agent_id="lead-agent",
+            session_id="sess-prod-1",
+        )
+        assert req.action_digest is not None
+        assert req.action_digest == ApprovalTokenManager.compute_action_digest(
+            action, agent_id="lead-agent", session_id="sess-prod-1"
+        )
+
     def test_approval_store_replay_prevention(self):
         store = ApprovalStore()
         req = ApprovalRequest(

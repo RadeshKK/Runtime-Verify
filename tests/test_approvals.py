@@ -160,7 +160,36 @@ class TestApprovalStoreCore:
         # State remains unchanged
         req = fresh_store.get_request(sample_request.request_id)
         assert req.status == ApprovalStatus.APPROVED
+        assert req.decision is not None
         assert req.decision.decided_by == "approver-1"
+
+    def test_action_transplant_attack_rejected(self):
+        """
+        Verifies that an approval token bound to Action A cannot be validated
+        or used against a modified/transplanted Action B.
+        """
+        from runtimeverify.security.approval_tokens import ApprovalTokenManager
+
+        action_legit = {"tool": "shell", "command": "git push origin main"}
+        action_tampered = {"tool": "shell", "command": "rm -rf /"}
+
+        token = ApprovalTokenManager.generate_bound_token(action_legit, agent_id="agent-deployer", session_id="sess-01")
+
+        # Passes for original action
+        assert (
+            ApprovalTokenManager.verify_bound_token(
+                token, action_legit, agent_id="agent-deployer", session_id="sess-01"
+            )
+            is True
+        )
+
+        # Rejects tampered action payload (Action Transplant attack)
+        assert (
+            ApprovalTokenManager.verify_bound_token(
+                token, action_tampered, agent_id="agent-deployer", session_id="sess-01"
+            )
+            is False
+        )
 
     def test_unknown_request(self, fresh_store: ApprovalStore):
         with pytest.raises(UnknownApprovalRequestError):
@@ -270,6 +299,7 @@ class TestApprovalProviders:
 
         decision = provider.request_approval(req)
         assert decision.decision == ApprovalDecisionType.DENY
+        assert decision.reason is not None
         assert "timed out" in decision.reason
         assert decision.decided_by == "system:timeout"
 

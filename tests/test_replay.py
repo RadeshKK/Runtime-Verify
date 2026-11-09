@@ -140,6 +140,7 @@ class TestAgentTraceReplayer:
         assert report.summary.blocked_steps >= 1
         assert report.summary.first_intervention_step == 4
         assert report.summary.first_intervention_layer == "Policy"
+        assert report.summary.first_intervention_reason is not None
         assert "credentials" in report.summary.first_intervention_reason.lower()
 
     def test_replay_destructive_attack(self, traces_dir: Path, policies_dir: Path):

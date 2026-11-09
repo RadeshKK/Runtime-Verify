@@ -285,7 +285,7 @@ def register_error_handlers(app: FastAPI) -> None:
                     }
                 }
             ),
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", status.HTTP_422_UNPROCESSABLE_ENTITY),
             headers={"X-Correlation-ID": corr_id},
             media_type="application/json",
         )

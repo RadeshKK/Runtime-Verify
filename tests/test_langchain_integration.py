@@ -64,6 +64,8 @@ class TestRuntimeVerifyCallbackHandler:
             handler.on_tool_end(output="On branch main\nnothing to commit", run_id=run_id)
 
             # Audit record should capture the execution
+            assert sdk_client.audit_repository is not None
+            assert sdk_client.audit_repository is not None
             records = sdk_client.audit_repository.query(session_id=session.session_id)
             summaries = [r.summary for r in records]
             assert any("executed: SUCCESS" in s for s in summaries)
@@ -135,6 +137,7 @@ class TestRuntimeVerifyCallbackHandler:
                 run_id=run_id,
             )
 
+            assert sdk_client.audit_repository is not None
             records = sdk_client.audit_repository.query(session_id=session.session_id)
             summaries = [r.summary for r in records]
             assert any("division by zero" in s for s in summaries)
@@ -162,6 +165,7 @@ class TestRuntimeVerifyCallbackHandler:
             # LLM End
             handler.on_llm_end(response={"text": "All clear"}, run_id=run_id)
 
+            assert sdk_client.audit_repository is not None
             records = sdk_client.audit_repository.query(session_id=session.session_id)
             summaries = [r.summary for r in records]
             assert any("LLM request to gpt-4" in s for s in summaries)

@@ -11,7 +11,7 @@ Tests all 8 decision scenarios and precedence rules:
 8. Engine unavailable / fallback resilience
 """
 
-from typing import Any
+from typing import Any, Optional
 import pytest
 
 from runtimeverify.interception.models import Action
@@ -45,7 +45,7 @@ class MockSemanticEngine(DecisionEngine):
         decision_signal: DecisionSignalType = DecisionSignalType.ALLOW,
         explanation: str = "Mock semantic evaluation",
         fallback: bool = False,
-        error: str = None,
+        error: Optional[str] = None,
     ):
         super().__init__()
         self._category = category
@@ -431,7 +431,9 @@ class TestHybridVerificationEngine:
         # Verify fallback evidence was recorded
         fallback_ev = [e for e in res.evidence if e.source == EvidenceType.SEMANTIC_SIGNAL and e.data.get("fallback")]
         assert len(fallback_ev) == 1
-        assert "timeout" in fallback_ev[0].data.get("error").lower()
+        err_msg = fallback_ev[0].data.get("error")
+        assert err_msg is not None
+        assert "timeout" in err_msg.lower()
 
     def test_five_question_explainability_contract(self, policy_evaluator: PolicyEvaluator):
         """

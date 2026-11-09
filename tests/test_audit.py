@@ -408,6 +408,7 @@ class TestAuditService:
         assert rec.session_id == "sess-100"
         assert rec.trace_id == "tr-100"
         assert "npm test" in rec.summary
+        assert audit_service.repository is not None
         assert audit_service.repository.count() == 1
 
     def test_audit_policy_decision_emission(self, audit_service: AuditService):

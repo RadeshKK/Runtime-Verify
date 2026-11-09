@@ -100,7 +100,19 @@ class ApprovalRequest(BaseModel):
         default_factory=lambda: uuid.uuid4().hex + uuid.uuid4().hex,
         description="Single-use cryptographic challenge token for replay protection",
     )
+    action_digest: Optional[str] = Field(
+        None,
+        description="Deterministic SHA-256 fingerprint binding this request to its proposed action",
+    )
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Extensible contextual metadata")
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.action_digest is None and self.action:
+            from runtimeverify.security.approval_tokens import ApprovalTokenManager
+
+            self.action_digest = ApprovalTokenManager.compute_action_digest(
+                self.action, agent_id=self.agent_id, session_id=self.session_id
+            )
 
     def is_expired(self, current_time: Optional[datetime] = None) -> bool:
         """Checks if the request deadline has elapsed."""
