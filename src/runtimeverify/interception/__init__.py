@@ -1,3 +1,13 @@
+from runtimeverify.interception.contract import (
+    InterceptionFailureMode,
+    UnifiedInterceptionContract,
+)
+from runtimeverify.interception.mcp_governance import (
+    MCPGovernanceDecision,
+    MCPGovernanceDecisionType,
+    MCPGovernanceEngine,
+    MCPRolePolicy,
+)
 from runtimeverify.interception.exceptions import (
     ActionExecutionError,
     ExecutionBlockedError,
@@ -30,6 +40,12 @@ __all__ = [
     "SafeActionExecutor",
     "InterceptionDecision",
     "InterceptionMode",
+    "InterceptionFailureMode",
+    "UnifiedInterceptionContract",
+    "MCPGovernanceDecision",
+    "MCPGovernanceDecisionType",
+    "MCPGovernanceEngine",
+    "MCPRolePolicy",
     "AuditLogEntry",
     "ExecutionContext",
     # Structured Exceptions

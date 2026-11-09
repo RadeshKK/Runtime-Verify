@@ -15,6 +15,7 @@ from runtimeverify.events.canonical import (
     ProcessCreationEvent,
     ShellCommandEvent,
 )
+from runtimeverify.events.tool import ToolEvent
 from runtimeverify.events.enums import EventAction, EventType
 from runtimeverify.policy.models import PolicyDecision
 from runtimeverify.runtime.context import ExecutionContext
@@ -32,6 +33,7 @@ class ActionType(str, Enum):
     NETWORK = "network"
     PROCESS = "process"
     GIT = "git"
+    TOOL = "tool"
     CUSTOM = "custom"
 
 
@@ -301,6 +303,15 @@ class Action(BaseModel):
                 operation=op,
                 target=branch or op,
                 branch=branch,
+            )
+
+        elif self.action_type == ActionType.TOOL:
+            return ToolEvent(
+                session_id=sid,
+                agent_id=aid,
+                tool_name=self.target,
+                arguments=self.params,
+                status="invoked",
             )
 
         # Fallback to generic Event

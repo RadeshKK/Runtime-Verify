@@ -7,7 +7,7 @@ RBAC authentication, sliding-window rate limiting, and 100% backward compatibili
 
 import os
 from typing import Any, Dict, List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -17,6 +17,7 @@ from runtimeverify.api.middleware import (
     SecretRedactionMiddleware,
     register_error_handlers,
 )
+from runtimeverify.api.v1.metrics import global_metrics
 from runtimeverify.api.v1.router import api_v1_router
 from runtimeverify.encoder import (
     DefaultContextEnricher,
@@ -286,8 +287,13 @@ def get_recent_decisions():
 
 
 @app.get("/metrics")
-def get_metrics():
-    """Legacy metrics statistical report."""
+def get_metrics(request: Request):
+    """Metrics endpoint supporting both Prometheus text and legacy JSON reports."""
+    accept = request.headers.get("accept", "")
+    if "text/plain" in accept:
+        content = global_metrics.generate_prometheus_text()
+        return Response(content=content, media_type="text/plain; version=0.0.4; charset=utf-8")
+
     total_decisions = len(decisions_cache)
     anomalies = sum(1 for d in decisions_cache.values() if d.get("status") == "BLOCK")
 
