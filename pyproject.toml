@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "runtimeverify"
-version = "0.1.0"
+version = "0.2.0"
 description = "Vendor-neutral statistical runtime verification, deterministic policy governance, and behavioral security platform for autonomous AI agents."
 readme = "README.md"
 license = { text = "MIT" }

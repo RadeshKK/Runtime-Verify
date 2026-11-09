@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/RadeshKK/Runtime-Verify/actions/workflows/ci.yml/badge.svg)](https://github.com/RadeshKK/Runtime-Verify/actions/workflows/ci.yml)
 [![Release](https://github.com/RadeshKK/Runtime-Verify/actions/workflows/release.yml/badge.svg)](https://github.com/RadeshKK/Runtime-Verify/actions/workflows/release.yml)
-[![PyPI Version](https://img.shields.io/badge/pypi-0.1.0-blue.svg)](https://pypi.org/project/runtimeverify/)
+[![PyPI Version](https://img.shields.io/badge/pypi-0.2.0-blue.svg)](https://pypi.org/project/runtimeverify/)
 [![Python Versions](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://pypi.org/project/runtimeverify/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Security Audit](https://img.shields.io/badge/security-pip--audit%20clean-brightgreen.svg)](https://github.com/RadeshKK/Runtime-Verify/actions)
